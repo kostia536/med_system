@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Реєстрація пацієнта</title>
+  <style>
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Форма реєстрації пацієнта</h2>
+  <form action="/register" method="POST">
+    <label>ПІБ:</label><input name="full_name" required><br>
+    <label>Стать:</label>
+    <select name="gender">
+      <option value="Чоловіча">Чоловіча</option>
+      <option value="Жіноча">Жіноча</option>
+    </select><br>
+    <label>Дата народження:</label><input type="date" name="birth_date" required><br>
+
+    <label>Аналіз:</label>
+    <select name="test_name" id="test-select" required>
+      <option value="">Оберіть аналіз</option>
+      <option value="Загальний аналіз крові">Загальний аналіз крові</option>
+      <option value="Біохімічний аналіз крові">Біохімічний аналіз крові</option>
+      <option value="Аналіз сечі">Аналіз сечі</option>
+    </select><br><br>
+
+    <div id="general-blood" class="hidden">
+      <h4>Загальний аналіз крові</h4>
+      <label>Гемоглобін:</label><input name="hemoglobin"><br>
+      <label>Еритроцити:</label><input name="erythrocytes"><br>
+      <label>Лейкоцити:</label><input name="leukocytes"><br>
+      <label>Тромбоцити:</label><input name="platelets"><br>
+    </div>
+
+    <div id="biochemical" class="hidden">
+      <h4>Біохімічний аналіз крові</h4>
+      <label>Глюкоза:</label><input name="glucose"><br>
+      <label>Білірубін:</label><input name="bilirubin"><br>
+      <label>АЛТ:</label><input name="alt"><br>
+      <label>АСТ:</label><input name="ast"><br>
+    </div>
+
+    <div id="urine" class="hidden">
+      <h4>Аналіз сечі</h4>
+      <label>Колір:</label><input name="color"><br>
+      <label>Прозорість:</label><input name="clarity"><br>
+      <label>Щільність:</label><input name="density"><br>
+      <label>pH:</label><input name="ph"><br>
+    </div>
+
+    <br>
+    <input type="submit" value="Зберегти">
+  </form>
+
+  <script>
+    const testSelect = document.getElementById("test-select");
+    const blocks = {
+      "Загальний аналіз крові": document.getElementById("general-blood"),
+      "Біохімічний аналіз крові": document.getElementById("biochemical"),
+      "Аналіз сечі": document.getElementById("urine")
+    };
+
+    testSelect.addEventListener("change", function () {
+      for (let key in blocks) blocks[key].classList.add("hidden");
+      const selected = testSelect.value;
+      if (blocks[selected]) {
+        blocks[selected].classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
