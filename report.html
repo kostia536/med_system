@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Агрегований звіт</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <main class="container">
+        <button onclick="location.href='index.html'" class="nav-btn">⬅ Назад до реєстрації</button>
+        
+        <h1>Агрегований звіт</h1>
+
+        <form id="agg-form">
+            <label>Оберіть показник:
+                <select name="metric">
+                    <option value="weight">Вага (кг)</option>
+                    <option value="height">Зріст (см)</option>
+                    <option value="bmi">ІМТ</option>
+                </select>
+            </label>
+            <button type="submit" class="save-btn">Сформувати звіт</button>
+        </form>
+
+        <div id="report-container" style="display: none; margin-top: 20px;">
+            <div id="pdf-report" class="pdf-template">
+                <h2 style="text-align: center; color: #e74c3c;">Аналітичний звіт</h2>
+                <p style="text-align: center; color: #7f8c8d;">Система обліку пацієнтів</p>
+                <hr>
+                
+                <div class="report-stats">
+                    <p><strong>Показник:</strong> <span id="rep-metric"></span></p>
+                    <p><strong>Кількість записів:</strong> <span id="rep-count"></span></p>
+                    
+                    <div style="background: #eafaf1; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                        <span style="font-size: 1.2em; color: #27ae60;">Середнє значення:</span><br>
+                        <strong style="font-size: 2.5em; color: #27ae60;" id="rep-avg"></strong>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>Звіт згенеровано автоматично: <span id="rep-date"></span></p>
+                </div>
+            </div>
+
+            <button id="download-rep-btn" class="download-btn">📥 Завантажити звіт (PDF)</button>
+        </div>
+    </main>
+
+    <script>
+        // Тестові дані (mock data), бо localStorage має тільки 1 запис
+        const mockPatients = [
+            { height: 170, weight: 65, bmi: 22.5 },
+            { height: 180, weight: 88, bmi: 27.1 },
+            { height: 160, weight: 55, bmi: 21.4 },
+            { height: 175, weight: 70, bmi: 22.8 },
+            { height: 165, weight: 90, bmi: 33.0 }
+        ];
+
+        const form = document.getElementById('agg-form');
+        const container = document.getElementById('report-container');
+        const btn = document.getElementById('download-rep-btn');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const metricKey = form.elements.metric.value;
+            const metricName = form.elements.metric.options[form.elements.metric.selectedIndex].text;
+
+            // Розрахунок середнього
+            const values = mockPatients.map(p => p[metricKey]);
+            const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2);
+
+            // Заповнення HTML
+            document.getElementById('rep-metric').innerText = metricName;
+            document.getElementById('rep-count').innerText = values.length;
+            document.getElementById('rep-avg').innerText = avg;
+            document.getElementById('rep-date').innerText = new Date().toLocaleString('uk-UA');
+
+            container.style.display = 'block';
+        });
+
+        // Генерація PDF
+        btn.addEventListener('click', () => {
+            const element = document.getElementById('pdf-report');
+            const opt = {
+                margin:       15,
+                filename:     `Звіт_${document.getElementById('rep-metric').innerText}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        });
+    </script>
+</body>
+</html>
