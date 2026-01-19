@@ -35,7 +35,7 @@
         </form>
 
         <div id="pdf-report" class="pdf-template printable-area only-pdf">
-            <h2 style="text-align: center; color: #2c3e50;">Індивідуальний аналітичний звіт</h2>
+            <h2 style="text-align: center; color: #2c3e50;">Індивідуальний Аналітичний Звіт</h2>
             <hr style="border: 1px solid #2c3e50;">
 
             <div style="margin-top: 20px;">
@@ -64,9 +64,9 @@
                 </p>
                 
                 <div class="calc-result-box" id="result-box">
-                    <h1 style="margin: 0; font-size: 3em;" id="pred-weight"></h1>
+                    <h1 style="margin: 0; font-size: 3em; line-height: 1.2;" id="pred-weight">-- кг</h1>
                     <p style="margin: 10px 0 0 0; font-size: 1.2em;">
-                        Відхилення: <strong id="diff-percent"></strong>
+                        Відхилення: <strong id="diff-percent">--%</strong>
                     </p>
                     <p id="diff-text" style="font-size: 0.9em;"></p>
                 </div>
@@ -76,10 +76,13 @@
                 <h3>3. Візуалізація (Scatter Plot + Trend Line)</h3>
                 <p style="font-size: 0.8em; color: #666;">
                     Сині точки - база даних. Чорна лінія - тренд. <br>
-                    <strong style="color: #e74c3c; font-size: 1.2em;">● Велике коло</strong> - це ви.
+                    <strong style="color: #e74c3c; font-size: 1.2em;">● Велика точка</strong> - це ви.
                 </p>
-                <div class="chart-container" style="height: 400px; width: 100%;">
+                
+                <div class="chart-container">
                     <canvas id="regressionChart"></canvas>
+                    
+                    <img id="chart-img-print" style="display: none; width: 100%;" alt="Графік аналізу">
                 </div>
             </div>
 
@@ -146,6 +149,7 @@
             const sign = diffPercent > 0 ? "+" : "";
             diffEl.innerText = `${sign}${diffPercent.toFixed(1)}%`;
 
+            // Скидання класів перед додаванням нових
             boxEl.className = 'calc-result-box';
             if (Math.abs(diffPercent) <= 10) {
                 boxEl.classList.add('result-good');
@@ -160,12 +164,6 @@
 
             // Малюємо графік
             renderRegressionChart(xValues, yValues, m, b, userH, userW);
-
-            // ЗАПУСК ДРУКУ З ЗАТРИМКОЮ
-            // 1 секунда (1000мс) потрібна, щоб графік встиг намалюватися
-            setTimeout(() => {
-                window.print();
-            }, 1000); 
         });
 
         function renderRegressionChart(xData, yData, m, b, userH, userW) {
@@ -185,22 +183,22 @@
                 data: {
                     datasets: [
                         {
-                            label: 'Пацієнти з бази',
+                            label: 'База',
                             data: scatterData,
-                            backgroundColor: 'rgba(52, 152, 219, 0.3)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.4)',
                             pointRadius: 3
                         },
                         {
-                            label: 'Лінія тренду',
+                            label: 'Тренд',
                             data: lineData,
                             type: 'line',
-                            borderColor: 'rgba(44, 62, 80, 0.8)',
+                            borderColor: 'rgba(44, 62, 80, 0.9)',
                             borderWidth: 2,
                             pointRadius: 0,
                             fill: false
                         },
                         {
-                            label: 'ВИ (Користувач)',
+                            label: 'ВИ',
                             data: [{ x: userH, y: userW }],
                             backgroundColor: '#e74c3c',
                             pointRadius: 10,
@@ -211,27 +209,30 @@
                     ]
                 },
                 options: {
-                    animation: false, // Вимикаємо анімацію для PDF
+                    animation: false, // ВИМИКАЄМО анімацію
                     responsive: true,
-                    maintainAspectRatio: false, // Дозволяє розтягуватися на всю висоту контейнера
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: { position: 'bottom' },
-                        title: { display: true, text: 'Залежність Ваги від Зросту' }
+                        title: { display: true, text: 'Графік Регресії' }
                     },
                     scales: {
-                        x: { 
-                            type: 'linear', 
-                            position: 'bottom', 
-                            title: { display: true, text: 'Зріст (см)' },
-                            min: 140, max: 210
-                        },
-                        y: { 
-                            title: { display: true, text: 'Вага (кг)' },
-                            min: 40, max: 150
-                        }
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
+                        y: { title: { display: true, text: 'Вага (кг)' }, min: 40, max: 150 }
                     }
                 }
             });
+
+            // === ФІКС ДЛЯ ДРУКУ ===
+            // Чекаємо трохи, конвертуємо графік в картинку і викликаємо друк
+            setTimeout(() => {
+                const imgData = myChart.toBase64Image();
+                const imgElem = document.getElementById('chart-img-print');
+                imgElem.src = imgData;
+                
+                // Тільки тепер друкуємо
+                window.print();
+            }, 800);
         }
     </script>
 </body>
