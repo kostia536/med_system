@@ -48,6 +48,7 @@
 
                     <div class="chart-container">
                         <canvas id="analyticsChart"></canvas>
+                        <img id="chart-img-print-report" class="chart-img-print" alt="Графік">
                     </div>
                 </div>
 
@@ -65,6 +66,19 @@
         const container = document.getElementById('report-container');
         const btn = document.getElementById('download-rep-btn');
         let myChart = null;
+
+        // Плагін для білого фону (щоб графік був видимий)
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -90,6 +104,10 @@
             document.getElementById('rep-date').innerText = new Date().toLocaleString('uk-UA');
 
             container.style.display = 'block';
+            
+            // Скрол до результату
+            container.scrollIntoView({ behavior: 'smooth' });
+            
             renderChart(values, metricName);
         });
 
@@ -121,16 +139,30 @@
                         borderWidth: 1
                     }]
                 },
+                plugins: [whiteBackgroundPlugin], // Додаємо білий фон
                 options: {
+                    animation: false,
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: 2,
                     scales: { y: { beginAtZero: true } }
                 }
             });
+
+            // Автоматично створюємо картинку для майбутнього друку
+            setTimeout(() => {
+                const imgData = myChart.toBase64Image();
+                document.getElementById('chart-img-print-report').src = imgData;
+            }, 500);
         }
 
         // ДРУК
         btn.addEventListener('click', () => {
+            // Оновлюємо картинку перед друком ще раз про всяк випадок
+            if (myChart) {
+                const imgData = myChart.toBase64Image();
+                document.getElementById('chart-img-print-report').src = imgData;
+            }
             window.print();
         });
     </script>
