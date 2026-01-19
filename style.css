@@ -186,69 +186,62 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     #interface-section { display: none !important; }
     #print-section { display: block !important; }
 
-/* === ВИПАДАЮЧЕ МЕНЮ (DROPDOWN) === */
+/* === ВИПАДАЮЧЕ МЕНЮ (МЕНЮ НАВІГАЦІЇ) === */
+
+/* Контейнер для меню */
 .dropdown {
     position: relative;
     display: inline-block;
     margin-bottom: 20px;
 }
 
-/* Кнопка "Меню" */
+/* Кнопка меню */
 .dropbtn {
-    background-color: #34495e; /* Темно-синій колір */
+    background-color: #34495e;
     color: white;
     padding: 12px 20px;
     font-size: 16px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s;
 }
 
 .dropbtn:hover, .dropbtn:focus {
     background-color: #2c3e50;
 }
 
-/* Контент меню (спочатку прихований) */
+/* Вміст меню (СПОЧАТКУ ПРИХОВАНИЙ!) */
 .dropdown-content {
-    display: none;
+    display: none; /* Це найважливіше - ховає посилання */
     position: absolute;
-    background-color: #ffffff;
-    min-width: 220px;
+    background-color: #f9f9f9;
+    min-width: 230px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1000; /* Щоб було поверх усього */
+    z-index: 9999; /* Щоб меню було поверх усього */
     border-radius: 5px;
-    overflow: hidden;
     border: 1px solid #ddd;
 }
 
 /* Посилання всередині меню */
 .dropdown-content a {
-    color: #333;
+    color: black;
     padding: 12px 16px;
     text-decoration: none;
     display: block;
-    font-family: 'Segoe UI', sans-serif;
-    border-bottom: 1px solid #f1f1f1;
+    border-bottom: 1px solid #eee;
 }
 
 .dropdown-content a:hover {
     background-color: #f1f1f1;
-    color: #3498db; /* Синій при наведенні */
+    color: #3498db;
 }
 
-/* Клас для відображення меню (додається через JS) */
+/* Цей клас додає JS, коли ми натискаємо кнопку */
 .show {
-    display: block;
+    display: block !important;
 }
 
-/* === ОНОВЛЕННЯ ДЛЯ ДРУКУ === */
+/* При друку меню ховаємо повністю */
 @media print {
-    /* Ховаємо меню при друку */
     .dropdown { display: none !important; }
-}
-    
-    /* Таблиця на весь аркуш */
-    .data-table { font-size: 12px; }
-    .data-table th, .data-table td { border: 1px solid #000; }
 }
