@@ -9,8 +9,16 @@
 </head>
 <body>
     <main class="container">
-        <button onclick="location.href='report.html'" class="nav-btn">📊 До звітів</button>
-        <button onclick="location.href='calculator.html'" class="nav-btn" style="background-color: #8e44ad;">🧮 Калькулятор норми ваги</button>
+        
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="index.html">Головна (Реєстрація)</a>
+                <a href="report.html">Агреговані звіти</a>
+                <a href="calculator.html">Калькулятор норми ваги</a>
+                <a href="doctor.html">Кабінет лікаря</a>
+            </div>
+        </div>
         
         <h1>Реєстрація пацієнта</h1>
         
@@ -41,11 +49,9 @@
         <div id="card-preview-section" style="display: none;">
             <hr>
             <h3>Попередній перегляд картки:</h3>
-            
             <div id="medical-card" class="pdf-template printable-area">
                 <h2 style="text-align: center; color: #2c3e50;">Медична картка пацієнта</h2>
                 <hr style="border: 1px solid #2c3e50;">
-                
                 <div style="margin-top: 20px; line-height: 1.6;">
                     <p><strong>ПІБ:</strong> <span id="card-name"></span></p>
                     <p><strong>Дата народження:</strong> <span id="card-birth"></span></p>
@@ -54,32 +60,44 @@
                     <p><strong>Фізичні дані:</strong> <span id="card-physique"></span></p>
                     <p><strong>ІМТ:</strong> <span id="card-bmi"></span></p>
                 </div>
-                
                 <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9;">
                     <strong>Коментар лікаря:</strong><br>
                     <span id="card-note"></span>
                 </div>
-                
                 <div style="margin-top: 40px; text-align: right; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
                     <p>Дата створення: <span id="card-date"></span></p>
                 </div>
             </div>
-
             <button id="download-btn" class="download-btn">🖨️ Друкувати / Зберегти PDF</button>
         </div>
     </main>
 
     <script>
+        // === ЛОГІКА МЕНЮ ===
+        function toggleMenu() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+
+        // === ВАШ ОСНОВНИЙ КОД ===
         const form = document.getElementById('patient-form');
         const previewSection = document.getElementById('card-preview-section');
         const downloadBtn = document.getElementById('download-btn');
-
         let currentPatient = null;
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(form);
-            
             const weight = Number(formData.get('weight'));
             const height = Number(formData.get('height'));
             const bmi = (weight / ((height/100) ** 2)).toFixed(1);
@@ -91,29 +109,22 @@
                 firstName: formData.get('firstName'),
                 lastName: formData.get('lastName'),
                 name: `${formData.get('lastName')} ${formData.get('firstName')}`,
-                
                 birthDate: birthDateVal,
                 birthYear: birthYear,
-                
                 gender: formData.get('gender'),
                 phone: formData.get('phone') || '-',
-                
                 height: height,
                 weight: weight,
                 bmi: bmi,
                 physique: `${height} см / ${weight} кг`,
-                
                 note: formData.get('note') || 'Немає приміток',
                 source: 'web'
             };
 
-            // Зберігаємо та додаємо в базу
             localStorage.setItem('lastPatient', JSON.stringify(currentPatient));
             addPatientToDB(currentPatient);
-            
             alert("Пацієнта додано до бази!");
 
-            // Заповнюємо шаблон
             document.getElementById('card-name').innerText = currentPatient.name;
             document.getElementById('card-birth').innerText = currentPatient.birthDate;
             document.getElementById('card-gender').innerText = currentPatient.gender;
@@ -127,7 +138,6 @@
             previewSection.scrollIntoView({ behavior: 'smooth' });
         });
 
-        // ДРУК
         downloadBtn.addEventListener('click', () => {
             window.print();
         });
