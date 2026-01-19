@@ -32,8 +32,10 @@
         </div>
 
         <div id="report-section">
-            <button onclick="location.reload()" class="nav-btn back-btn">⬅ Спробувати ще раз</button>
-            <button onclick="window.print()" class="save-btn" style="width: auto; float: right;">🖨️ Друкувати PDF</button>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <button onclick="location.reload()" class="nav-btn back-btn">⬅ Спробувати ще раз</button>
+                <button onclick="window.print()" class="save-btn" style="width: auto; margin-top: 0;">🖨️ Друкувати PDF</button>
+            </div>
             
             <div class="pdf-template">
                 <h2 style="text-align: center; color: #2c3e50;">Індивідуальний Аналітичний Звіт</h2>
@@ -63,7 +65,6 @@
                     
                     <div class="calc-result-box" id="result-box">
                         <div class="weight-value" id="pred-weight">-- кг</div>
-                        
                         <p style="margin: 15px 0 0 0; font-size: 1.2em;">
                             Відхилення: <strong id="diff-percent">--%</strong>
                         </p>
@@ -73,7 +74,7 @@
 
                 <div style="margin-top: 30px;">
                     <h3>3. Візуалізація</h3>
-                    <p style="font-size: 0.8em; color: #666;">Сині точки - база. Чорна лінія - тренд. <br><strong>Велике червоне коло - це ви.</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">Сині точки - база. Червона лінія - тренд. <br><strong>Велике червоне коло - це ви.</strong></p>
                     
                     <div class="chart-container">
                         <canvas id="regressionChart"></canvas>
@@ -95,7 +96,7 @@
             const reportSection = document.getElementById('report-section');
             let myChart = null;
 
-            // Плагін для білого фону
+            // Плагін для білого фону (щоб графік був непрозорим)
             const whiteBackgroundPlugin = {
                 id: 'customCanvasBackgroundColor',
                 beforeDraw: (chart) => {
@@ -122,7 +123,6 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
-                // 1. Отримуємо дані
                 const gender = form.elements.gender.value;
                 const userH = Number(form.elements.height.value);
                 const userW = Number(form.elements.weight.value);
@@ -138,7 +138,7 @@
                 const diffKg = userW - predictedW;
                 const diffPercent = (diffKg / predictedW) * 100;
 
-                // 2. Оновлюємо HTML звіту
+                // Заповнюємо звіт
                 document.getElementById('res-gender').textContent = gender;
                 document.getElementById('res-height').textContent = userH;
                 document.getElementById('res-weight').textContent = userW;
@@ -165,11 +165,11 @@
                     textEl.textContent = "Значне відхилення.";
                 }
 
-                // 3. ЗМІНА ЕКРАНУ (Ховаємо форму, показуємо звіт)
+                // ПЕРЕМИКАЄМО ЕКРАНИ
                 inputSection.style.display = 'none';
                 reportSection.style.display = 'block';
 
-                // 4. Малюємо графік
+                // Малюємо графік
                 renderRegressionChart(xValues, yValues, m, b, userH, userW);
             });
 
@@ -203,15 +203,15 @@
                     }
                 });
 
-                // Чекаємо, поки графік з'явиться на екрані
+                // СТВОРЮЄМО КАРТИНКУ ДЛЯ ДРУКУ (ЗАТРИМКА 0.5с)
                 setTimeout(() => {
-                    // Конвертуємо графік в картинку для стабільного друку
                     const imgData = myChart.toBase64Image();
                     const imgElem = document.getElementById('chart-img-print');
                     imgElem.src = imgData;
                     
-                    // Відкриваємо друк автоматично
-                    setTimeout(() => window.print(), 500);
+                    // Автоматичний друк через 1с після малювання, 
+                    // щоб користувач встиг побачити результат на екрані.
+                    setTimeout(() => window.print(), 1000);
                 }, 500);
             }
         });
