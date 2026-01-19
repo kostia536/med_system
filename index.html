@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="data.js"></script>
 </head>
 <body>
     <main class="container">
@@ -84,27 +85,46 @@
             const weight = Number(formData.get('weight'));
             const height = Number(formData.get('height'));
             const bmi = (weight / ((height/100) ** 2)).toFixed(1);
+            
+            // Отримання року народження для сумісності з CSV
+            const birthDateVal = formData.get('birthDate');
+            const birthYear = new Date(birthDateVal).getFullYear();
 
+            // Створення повного об'єкта (збігається зі структурою в data.js)
             currentPatient = {
+                id: Date.now(), // Унікальний ID на основі часу
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                // Для відображення
                 name: `${formData.get('lastName')} ${formData.get('firstName')}`,
-                birth: formData.get('birthDate'),
+                
+                birthDate: birthDateVal,
+                birthYear: birthYear, // Додаємо рік!
+                
                 gender: formData.get('gender'),
                 phone: formData.get('phone') || '-',
-                physique: `${height} см / ${weight} кг`,
+                
+                height: height,
+                weight: weight,
                 bmi: bmi,
-                note: formData.get('note') || 'Немає приміток'
+                
+                // Для картки (рядок)
+                physique: `${height} см / ${weight} кг`,
+                
+                note: formData.get('note') || 'Немає приміток',
+                source: 'web'
             };
 
-            // Зберігаємо для звітів
-            localStorage.setItem('lastPatient', JSON.stringify({
-                ...currentPatient, 
-                weight: weight, 
-                height: height 
-            }));
+            // 1. Зберігаємо локально для цієї сторінки
+            localStorage.setItem('lastPatient', JSON.stringify(currentPatient));
 
-            // Заповнюємо шаблон HTML
+            // 2. ДОДАЄМО В ГЛОБАЛЬНУ БАЗУ (виклик функції з data.js)
+            addPatientToDB(currentPatient);
+            alert("Пацієнта успішно додано до загальної бази даних!");
+
+            // Заповнення шаблону
             document.getElementById('card-name').innerText = currentPatient.name;
-            document.getElementById('card-birth').innerText = currentPatient.birth;
+            document.getElementById('card-birth').innerText = currentPatient.birthDate;
             document.getElementById('card-gender').innerText = currentPatient.gender;
             document.getElementById('card-phone').innerText = currentPatient.phone;
             document.getElementById('card-physique').innerText = currentPatient.physique;
@@ -112,24 +132,19 @@
             document.getElementById('card-note').innerText = currentPatient.note;
             document.getElementById('card-date').innerText = new Date().toLocaleString('uk-UA');
 
-            // Показуємо блок
             previewSection.style.display = 'block';
-            // Прокручуємо до нього
             previewSection.scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Генерація PDF
         downloadBtn.addEventListener('click', () => {
             const element = document.getElementById('medical-card');
-            
             const opt = {
-                margin:       10,
-                filename:     `Картка_${currentPatient.name}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 }, // Висока якість
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 10,
+                filename: `Картка_${currentPatient.name}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-
             html2pdf().set(opt).from(element).save();
         });
     </script>
