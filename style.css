@@ -28,9 +28,7 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 .download-btn { background-color: #27ae60; color: white; margin-top: 20px; width: 100%; }
 
 /* === ЛОГІКА ЗВІТІВ === */
-/* Блок з формою */
 #input-section { display: block; }
-/* Блок зі звітом (спочатку прихований) */
 #report-section { display: none; }
 
 .pdf-template { border: 1px solid #e0e0e0; padding: 40px; background: #fff; margin-top: 20px; border-radius: 5px; }
@@ -60,142 +58,18 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 }
 
 /* Картинка для друку (на екрані ПРИХОВАНА) */
-#chart-img-print {
-    display: none; 
-}
+#chart-img-print { display: none; }
 
 /* Canvas (на екрані ВИДИМИЙ) */
-#regressionChart {
-    display: block;
-    width: 100%;
-}
-
-/* === НАЛАШТУВАННЯ ДРУКУ (PDF) === */
-@media print {
-    @page { size: A4; margin: 10mm; }
-    
-    body { 
-        background-color: white; padding: 0; margin: 0; 
-        -webkit-print-color-adjust: exact; print-color-adjust: exact; 
-    }
-
-    /* 1. ХОВАЄМО ВСІ КНОПКИ ТА ФОРМИ */
-    button, .nav-btn, .save-btn, .download-btn, .back-btn, form, h1, #input-section { 
-        display: none !important; 
-    }
-    
-    /* 2. ПОКАЗУЄМО ТІЛЬКИ ЗВІТ */
-    .container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; border: none; }
-    #report-section { display: block !important; }
-    .pdf-template { border: none; padding: 0; margin: 0; margin-top: 0; }
-
-    /* 3. ПІДМІНА ГРАФІКА (ВАЖЛИВО!) */
-    /* Ховаємо глючний canvas */
-    canvas, #regressionChart { display: none !important; }
-    
-    /* Показуємо стабільну картинку */
-    #chart-img-print { 
-        display: block !important; 
-        width: 100%; 
-        max-height: 400px; /* Обмеження висоти, щоб не з'їжджало */
-        object-fit: contain; /* Щоб картинка не розтягувалась */
-    }
-
-    /* 4. ФІКС ТЕКСТУ */
-    .weight-value, p, span, td, strong { color: #000 !important; }
-    
-    /* Заборона розриву сторінки всередині блоків */
-    .calc-result-box, .chart-container { break-inside: avoid; }
-}
-
-/* === СТИЛІ ДЛЯ doctor.html === */
-
-/* Панель фільтрів */
-.filter-panel {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #e9ecef;
-}
-
-.radio-group {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.radio-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    background: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    border: 1px solid #ddd;
-    transition: all 0.2s;
-}
-
-.radio-btn:hover { background: #f1f1f1; }
-.radio-btn input { width: auto; margin: 0; }
-
-/* Стилі для конкретних радіокнопок при виборі */
-.radio-btn:has(input:checked) {
-    border-color: #3498db;
-    background-color: #ebf5fb;
-    font-weight: bold;
-    color: #2980b9;
-}
-
-.radio-btn.warning:has(input:checked) {
-    border-color: #c0392b;
-    background-color: #fdedec;
-    color: #c0392b;
-}
-
-.radio-btn.good:has(input:checked) {
-    border-color: #27ae60;
-    background-color: #eafaf1;
-    color: #27ae60;
-}
-
-/* Таблиця для звіту */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    font-size: 14px;
-}
-
-.data-table th, .data-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-
-.data-table th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-}
-
-.data-table tr:nth-child(even) { background-color: #f9f9f9; }
-
-/* Специфічні стилі друку для цієї сторінки */
-@media print {
-    #interface-section { display: none !important; }
-    #print-section { display: block !important; }
+#regressionChart { display: block; width: 100%; }
 
 /* === ВИПАДАЮЧЕ МЕНЮ (МЕНЮ НАВІГАЦІЇ) === */
-
-/* Контейнер для меню */
 .dropdown {
     position: relative;
     display: inline-block;
     margin-bottom: 20px;
 }
 
-/* Кнопка меню */
 .dropbtn {
     background-color: #34495e;
     color: white;
@@ -206,23 +80,19 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     cursor: pointer;
 }
 
-.dropbtn:hover, .dropbtn:focus {
-    background-color: #2c3e50;
-}
+.dropbtn:hover, .dropbtn:focus { background-color: #2c3e50; }
 
-/* Вміст меню (СПОЧАТКУ ПРИХОВАНИЙ!) */
 .dropdown-content {
-    display: none; /* Це найважливіше - ховає посилання */
+    display: none; /* ПРИХОВАНО ЗА ЗАМОВЧУВАННЯМ */
     position: absolute;
     background-color: #f9f9f9;
     min-width: 230px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 9999; /* Щоб меню було поверх усього */
+    z-index: 9999;
     border-radius: 5px;
     border: 1px solid #ddd;
 }
 
-/* Посилання всередині меню */
 .dropdown-content a {
     color: black;
     padding: 12px 16px;
@@ -231,17 +101,73 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     border-bottom: 1px solid #eee;
 }
 
-.dropdown-content a:hover {
-    background-color: #f1f1f1;
-    color: #3498db;
+.dropdown-content a:hover { background-color: #f1f1f1; color: #3498db; }
+
+/* Цей клас додає JS */
+.show { display: block !important; }
+
+
+/* === СТИЛІ ДЛЯ doctor.html === */
+.filter-panel {
+    background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;
 }
 
-/* Цей клас додає JS, коли ми натискаємо кнопку */
-.show {
-    display: block !important;
-}
+.radio-group { display: flex; gap: 15px; flex-wrap: wrap; }
 
-/* При друку меню ховаємо повністю */
+.radio-btn {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    background: white; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; transition: all 0.2s;
+}
+.radio-btn:hover { background: #f1f1f1; }
+.radio-btn input { width: auto; margin: 0; }
+
+.radio-btn:has(input:checked) { border-color: #3498db; background-color: #ebf5fb; font-weight: bold; color: #2980b9; }
+.radio-btn.warning:has(input:checked) { border-color: #c0392b; background-color: #fdedec; color: #c0392b; }
+.radio-btn.good:has(input:checked) { border-color: #27ae60; background-color: #eafaf1; color: #27ae60; }
+
+.data-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+.data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+.data-table th { background-color: #f2f2f2; font-weight: bold; }
+.data-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+/* === НАЛАШТУВАННЯ ДРУКУ (PDF) === */
 @media print {
-    .dropdown { display: none !important; }
+    @page { size: A4; margin: 10mm; }
+    
+    body { 
+        background-color: white; padding: 0; margin: 0; 
+        -webkit-print-color-adjust: exact; print-color-adjust: exact; 
+    }
+
+    /* Ховаємо ВСІ кнопки, форми та меню */
+    button, .nav-btn, .save-btn, .download-btn, .back-btn, form, h1, #input-section, .dropdown { 
+        display: none !important; 
+    }
+    
+    /* Докторська панель */
+    #interface-section { display: none !important; }
+    #print-section { display: block !important; }
+
+    /* Звіти */
+    .container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; border: none; }
+    #report-section { display: block !important; }
+    .pdf-template { border: none; padding: 0; margin: 0; margin-top: 0; }
+
+    /* Підміна графіка */
+    canvas, #regressionChart { display: none !important; }
+    #chart-img-print { 
+        display: block !important; 
+        width: 100%; 
+        max-height: 400px; 
+        object-fit: contain; 
+    }
+
+    /* Текст */
+    .weight-value, p, span, td, strong { color: #000 !important; }
+    
+    .calc-result-box, .chart-container { break-inside: avoid; }
+    
+    /* Таблиця на весь аркуш */
+    .data-table { font-size: 12px; }
+    .data-table th, .data-table td { border: 1px solid #000; }
 }
