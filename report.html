@@ -6,7 +6,6 @@
     <title>Агрегований звіт</title>
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="data.js"></script>
 </head>
@@ -28,7 +27,7 @@
         </form>
 
         <div id="report-container" style="display: none; margin-top: 20px;">
-            <div id="pdf-report" class="pdf-template">
+            <div id="pdf-report" class="pdf-template printable-area">
                 <h2 style="text-align: center; color: #e74c3c;">Аналітичний звіт</h2>
                 <p style="text-align: center; color: #7f8c8d;">Система обліку пацієнтів</p>
                 <hr>
@@ -37,30 +36,28 @@
                     <p><strong>Показник:</strong> <span id="rep-metric"></span></p>
                     <p><strong>Всього пацієнтів:</strong> <span id="rep-count"></span></p>
                     
-                    <table class="stats-table">
-                        <tr>
-                            <td class="bg-green">
-                                <span style="font-size: 1.1em; color: #27ae60;">Середнє значення:</span><br>
-                                <strong style="font-size: 2em; color: #27ae60;" id="rep-avg"></strong>
-                            </td>
-                            <td class="bg-orange">
-                                <span style="font-size: 1.1em; color: #d35400;">Максимум:</span><br>
-                                <strong style="font-size: 2em; color: #d35400;" id="rep-max"></strong>
-                            </td>
-                        </tr>
-                    </table>
+                    <div class="stats-container">
+                        <div class="stat-card bg-green">
+                            <span style="font-size: 1.1em; color: #27ae60;">Середнє значення:</span><br>
+                            <strong style="font-size: 2em; color: #27ae60;" id="rep-avg"></strong>
+                        </div>
+                        <div class="stat-card bg-orange">
+                            <span style="font-size: 1.1em; color: #d35400;">Максимум:</span><br>
+                            <strong style="font-size: 2em; color: #d35400;" id="rep-max"></strong>
+                        </div>
+                    </div>
 
                     <div class="chart-container">
                         <canvas id="analyticsChart"></canvas>
                     </div>
                 </div>
 
-                <div class="footer">
-                    <p>Звіт згенеровано автоматично: <span id="rep-date"></span></p>
+                <div style="margin-top: 40px; text-align: right; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
+                    <p>Звіт згенеровано: <span id="rep-date"></span></p>
                 </div>
             </div>
 
-            <button id="download-rep-btn" class="download-btn">📥 Завантажити звіт (PDF)</button>
+            <button id="download-rep-btn" class="download-btn">🖨️ Друкувати / Зберегти PDF</button>
         </div>
     </main>
 
@@ -126,24 +123,16 @@
                     }]
                 },
                 options: {
-                    animation: false, // ВИМКНУТИ АНІМАЦІЮ для PDF
-                    responsive: false, // ВИМКНУТИ РЕСАЙЗ для PDF
+                    responsive: true,
                     maintainAspectRatio: false,
                     scales: { y: { beginAtZero: true } }
                 }
             });
         }
 
+        // ДРУК
         btn.addEventListener('click', () => {
-            const element = document.getElementById('pdf-report');
-            const opt = {
-                margin: 5,
-                filename: `Звіт_${document.getElementById('rep-metric').innerText}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
+            window.print();
         });
     </script>
 </body>
