@@ -30,7 +30,7 @@
             <button type="submit" class="save-btn">🔍 Аналізувати та Друкувати</button>
         </form>
 
-        <div id="pdf-report" class="pdf-template" style="display: none;">
+        <div id="pdf-report" class="pdf-template">
             <h2 style="text-align: center; color: #2c3e50;">Індивідуальний Аналітичний Звіт</h2>
             <hr style="border: 1px solid #2c3e50;">
 
@@ -55,12 +55,13 @@
             <div style="margin-top: 30px;">
                 <h3>2. Результат моделювання</h3>
                 <p>База даних: <span id="db-count"></span> записів. Прогноз:</p>
+                
                 <div class="calc-result-box" id="result-box">
-                    <h1 style="margin: 0; font-size: 3em;" id="pred-weight">-- кг</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 1.2em;">
+                    <h1 style="margin: 0; font-size: 3em; color: #000; min-height: 1.2em;" id="pred-weight">-- кг</h1>
+                    <p style="margin: 10px 0 0 0; font-size: 1.2em; color: #000; min-height: 1.2em;">
                         Відхилення: <strong id="diff-percent">--%</strong>
                     </p>
-                    <p id="diff-text" style="font-size: 0.9em;"></p>
+                    <p id="diff-text" style="font-size: 0.9em; color: #333; min-height: 1.2em;"></p>
                 </div>
             </div>
 
@@ -81,14 +82,12 @@
     </main>
 
     <script>
-        // Запускаємо код тільки коли сторінка завантажена
         document.addEventListener('DOMContentLoaded', function() {
-            
             const form = document.getElementById('calc-form');
-            const reportDiv = document.getElementById('pdf-report');
+            if (!form) return; 
+
             let myChart = null;
 
-            // Плагін для білого фону (важливо для JPG)
             const whiteBackgroundPlugin = {
                 id: 'customCanvasBackgroundColor',
                 beforeDraw: (chart) => {
@@ -115,13 +114,6 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
-                // 1. ПОКАЗУЄМО ЗВІТ НА ЕКРАНІ
-                // Це критично важливо! Без цього графік не намалюється.
-                reportDiv.style.display = 'block';
-
-                // Скролимо до звіту
-                reportDiv.scrollIntoView({ behavior: 'smooth' });
-
                 const gender = form.elements.gender.value;
                 const userH = Number(form.elements.height.value);
                 const userW = Number(form.elements.weight.value);
@@ -138,15 +130,18 @@
                 const diffPercent = (diffKg / predictedW) * 100;
 
                 // Оновлюємо дані
-                document.getElementById('res-gender').innerText = gender;
-                document.getElementById('res-height').innerText = userH;
-                document.getElementById('res-weight').innerText = userW;
-                document.getElementById('db-count').innerText = filteredData.length;
-                document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
+                document.getElementById('res-gender').textContent = gender;
+                document.getElementById('res-height').textContent = userH;
+                document.getElementById('res-weight').textContent = userW;
+                document.getElementById('db-count').textContent = filteredData.length;
+                document.getElementById('report-date').textContent = new Date().toLocaleString('uk-UA');
 
-                document.getElementById('pred-weight').innerText = `${predictedW.toFixed(1)} кг`;
+                const predText = `${predictedW.toFixed(1)} кг`;
                 const sign = diffPercent > 0 ? "+" : "";
-                document.getElementById('diff-percent').innerText = `${sign}${diffPercent.toFixed(1)}%`;
+                const diffTextVal = `${sign}${diffPercent.toFixed(1)}%`;
+
+                document.getElementById('pred-weight').textContent = predText;
+                document.getElementById('diff-percent').textContent = diffTextVal;
 
                 const boxEl = document.getElementById('result-box');
                 const textEl = document.getElementById('diff-text');
@@ -154,16 +149,15 @@
                 
                 if (Math.abs(diffPercent) <= 10) {
                     boxEl.classList.add('result-good');
-                    textEl.innerText = "У межах норми.";
+                    textEl.textContent = "У межах норми.";
                 } else if (Math.abs(diffPercent) <= 20) {
                     boxEl.classList.add('result-warn');
-                    textEl.innerText = diffPercent > 0 ? "Вище середнього." : "Нижче середнього.";
+                    textEl.textContent = diffPercent > 0 ? "Вище середнього." : "Нижче середнього.";
                 } else {
                     boxEl.classList.add('result-bad');
-                    textEl.innerText = "Значне відхилення.";
+                    textEl.textContent = "Значне відхилення.";
                 }
 
-                // Малюємо графік
                 renderRegressionChart(xValues, yValues, m, b, userH, userW);
             });
 
@@ -197,22 +191,15 @@
                     }
                 });
 
-                // Чекаємо, поки графік намалюється, потім робимо з нього картинку
+                // Генерація картинки і друк
                 setTimeout(() => {
-                    try {
-                        const imgData = myChart.toBase64Image();
-                        const imgElem = document.getElementById('chart-img-print');
-                        imgElem.src = imgData;
-                        
-                        console.log("Графік готовий. Відкриваємо друк...");
-                        
-                        // Тільки коли картинка готова, відкриваємо друк
-                        imgElem.onload = function() {
-                            setTimeout(() => window.print(), 200);
-                        };
-                    } catch (e) {
-                        console.error("Помилка:", e);
-                    }
+                    const imgData = myChart.toBase64Image();
+                    const imgElem = document.getElementById('chart-img-print');
+                    imgElem.src = imgData;
+                    
+                    imgElem.onload = function() {
+                        setTimeout(() => window.print(), 300);
+                    };
                 }, 800);
             }
         });
