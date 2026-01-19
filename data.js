@@ -1,8 +1,7 @@
-// === data.js ===
+// data.js
 
-// 1. Вставте сюди ВЕСЬ вміст вашого CSV файлу між зворотними лапками ` `
-// Я додав сюди частину рядків з вашого файлу. Ви можете скопіювати сюди всі 1000+ рядків.
-const csvSource = `person_id,sex,birth year,"height, cm","weight, kg"
+// Повний набір даних із вашого файлу
+const csvRaw = `person_id,sex,birth year,"height, cm","weight, kg"
 655,F,1967,167.4,107
 926,F,1994,152.3,64.2
 65,M,1964,178.6,105.7
@@ -1104,45 +1103,41 @@ const csvSource = `person_id,sex,birth year,"height, cm","weight, kg"
 539,M,1955,180.7,117.7
 1013,F,1976,183.9,101.2`;
 
-// Функція ініціалізації
 function initDatabase() {
     // Якщо бази ще немає в LocalStorage - створюємо
     if (!localStorage.getItem('medicalDB')) {
         console.log("Ініціалізація бази даних з архіву...");
         
-        const lines = csvSource.split('\n');
+        const lines = csvRaw.split('\n');
         const db = [];
 
+        // Пропускаємо заголовок (i=1)
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].trim();
             if (!row) continue;
             
             const cols = row.split(',');
             
-            // Парсинг даних з CSV
+            // Парсинг даних
             const height = parseFloat(cols[3]);
             const weight = parseFloat(cols[4]);
             
-            // Розрахунок ІМТ для архіву
             let bmi = 0;
             if (height > 0) {
-                 // Формула: вага / (ріст_в_метрах)^2
                  bmi = (weight / ((height/100) ** 2)).toFixed(1);
             }
 
-            // Переклад статі
             const genderNormalized = cols[1] === 'M' ? 'Чоловіча' : 'Жіноча';
 
-            // Створення повного об'єкта пацієнта (з null для невідомих полів)
+            // Об'єкт із NULL для відсутніх полів
             db.push({
                 id: cols[0],
-                firstName: null,  // Немає в CSV
-                lastName: null,   // Немає в CSV
-                // Для зручності відображення даємо умовне ім'я
-                name: `Пацієнт ${cols[0]} (Архів)`, 
+                firstName: null,
+                lastName: null,
+                name: `Пацієнт ID ${cols[0]}`, // Технічне ім'я для списків
                 
-                birthDate: null,  // Немає повної дати
-                birthYear: parseInt(cols[2]), // Але є рік!
+                birthDate: null, 
+                birthYear: parseInt(cols[2]),
                 
                 gender: genderNormalized,
                 
@@ -1153,27 +1148,23 @@ function initDatabase() {
                 phone: null,
                 note: null,
                 
-                source: 'csv' // Мітка джерела
+                source: 'csv'
             });
         }
         
-        // Збереження в браузері
         localStorage.setItem('medicalDB', JSON.stringify(db));
     }
 }
 
-// Отримання всієї бази
 function getDatabase() {
     const data = localStorage.getItem('medicalDB');
     return data ? JSON.parse(data) : [];
 }
 
-// Додавання нового запису
 function addPatientToDB(patient) {
     const db = getDatabase();
     db.push(patient);
     localStorage.setItem('medicalDB', JSON.stringify(db));
 }
 
-// Запускаємо при завантаженні сторінки
 initDatabase();
