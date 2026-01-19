@@ -168,14 +168,10 @@
         btn.addEventListener('click', () => {
             const element = document.getElementById('pdf-report');
             const opt = {
-                margin:       10,
+                margin:       5, // Менші поля, щоб графік вліз
                 filename:     `Звіт_${document.getElementById('rep-metric').innerText}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    scrollY: 0 /* Фікс для прокрутки */
-                },
+                html2canvas:  { scale: 2, useCORS: true }, 
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
