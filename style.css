@@ -15,69 +15,65 @@ body {
 
 h1 { color: #333; text-align: center; }
 
-/* Форми та кнопки */
+/* Форми */
 .form-group { display: flex; gap: 20px; margin-bottom: 15px; }
 .form-group label { flex: 1; }
 label { display: block; margin-bottom: 10px; font-weight: bold; color: #555; }
 input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+
+/* Кнопки */
 button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; padding: 10px 20px; transition: background 0.3s; }
 .save-btn { background-color: #3498db; color: white; width: 100%; margin-top: 10px; }
 .download-btn { background-color: #27ae60; color: white; margin-top: 15px; width: 100%; }
 .nav-btn { background-color: #95a5a6; color: white; margin-bottom: 20px; }
 
-/* === СТИЛІ ДЛЯ PDF (ТАБЛИЧНА ВЕРСТКА) === */
+/* Блоки для відображення на екрані (картка, звіт) */
 .pdf-template {
-    width: 700px; /* Фіксована ширина А4 */
-    margin: 20px auto;
-    background: #fff;
-    padding: 30px;
     border: 1px solid #ddd;
-}
-
-/* Таблиця для даних пацієнта */
-.pdf-table {
-    width: 100%;
-    border-collapse: collapse;
+    padding: 30px;
+    background: #fff;
     margin-top: 20px;
+    border-radius: 5px;
 }
 
-.pdf-table td {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-    vertical-align: top;
-    width: 50%; /* Дві рівні колонки */
-}
-
-/* Блок статистики у звіті */
-.stats-table {
-    width: 100%;
-    margin-top: 20px;
-    border-spacing: 10px; /* Відступи між комірками */
-    border-collapse: separate; 
-}
-
-.stats-table td {
-    padding: 15px;
-    text-align: center;
-    border-radius: 8px;
-    width: 50%;
-}
-
+/* Статистика та графіки */
+.stats-container { display: flex; gap: 20px; margin-top: 20px; }
+.stat-card { flex: 1; padding: 15px; border-radius: 8px; text-align: center; }
 .bg-green { background-color: #eafaf1; border: 1px solid #d5f5e3; }
 .bg-orange { background-color: #fdf2e9; border: 1px solid #fae5d3; }
+.chart-container { position: relative; height: 350px; width: 100%; margin-top: 30px; }
 
-/* Контейнер графіка - ФІКСОВАНІ РОЗМІРИ */
-.chart-container {
-    width: 600px; 
-    height: 350px; 
-    margin: 20px auto;
-}
+/* === МАГІЯ ДЛЯ PDF (ДРУКУ) === */
+@media print {
+    /* Ховаємо все зайве */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Ховаємо фон сторінки */
+    body {
+        background-color: white;
+        padding: 0;
+        margin: 0;
+    }
 
-.footer {
-    margin-top: 40px;
-    font-size: 0.8em;
-    color: #888;
-    text-align: right;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
+    /* Показуємо ТІЛЬКИ область для друку */
+    .printable-area, .printable-area * {
+        visibility: visible;
+    }
+
+    /* Позиціонуємо область друку на початок сторінки */
+    .printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        border: none; /* Прибираємо рамки */
+        box-shadow: none;
+    }
+
+    /* Ховаємо кнопки всередині області друку (якщо є) */
+    button { display: none !important; }
 }
