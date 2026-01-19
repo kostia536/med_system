@@ -10,9 +10,14 @@
 </head>
 <body>
     <main class="container">
-        <div id="interface-section">
-            <button onclick="location.href='index.html'" class="nav-btn">⬅ На головну</button>
-            <h1>Кабінет Лікаря: Моніторинг Ризиків</h1>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="index.html">Головна (Реєстрація)</a>
+                <a href="report.html">Агреговані звіти</a>
+                <a href="calculator.html">Калькулятор норми ваги</a>
+            </div>
+        </div>
 
             <div class="filter-panel">
                 <h3>Фільтр пацієнтів:</h3>
@@ -93,6 +98,21 @@
 
     <script>
         let myChart = null;
+
+        function toggleMenu() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
 
         // Плагін для малювання кольорових зон (Heatmap ефект)
         const backgroundPlugin = {
