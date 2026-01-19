@@ -9,21 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="data.js"></script>
-    
-    <style>
-        /* Спеціальні стилі для коректного відображення в PDF */
-        .stat-cards-container {
-            display: flex;
-            justify-content: space-between; /* Замість gap, який глючить в html2canvas */
-            margin-top: 20px;
-        }
-        .stat-card {
-            width: 48%; /* Трішки менше 50%, щоб влізли поруч */
-            padding: 15px; 
-            border-radius: 8px; 
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
     <main class="container">
@@ -50,20 +35,22 @@
                 
                 <div class="report-stats">
                     <p><strong>Показник:</strong> <span id="rep-metric"></span></p>
-                    <p><strong>Всього пацієнтів у базі:</strong> <span id="rep-count"></span></p>
+                    <p><strong>Всього пацієнтів:</strong> <span id="rep-count"></span></p>
                     
-                    <div class="stat-cards-container">
-                        <div class="stat-card" style="background: #eafaf1;">
-                            <span style="font-size: 1.1em; color: #27ae60;">Середнє значення:</span><br>
-                            <strong style="font-size: 2em; color: #27ae60;" id="rep-avg"></strong>
-                        </div>
-                        <div class="stat-card" style="background: #fdf2e9;">
-                            <span style="font-size: 1.1em; color: #d35400;">Максимум:</span><br>
-                            <strong style="font-size: 2em; color: #d35400;" id="rep-max"></strong>
-                        </div>
-                    </div>
+                    <table class="stats-table">
+                        <tr>
+                            <td class="bg-green">
+                                <span style="font-size: 1.1em; color: #27ae60;">Середнє значення:</span><br>
+                                <strong style="font-size: 2em; color: #27ae60;" id="rep-avg"></strong>
+                            </td>
+                            <td class="bg-orange">
+                                <span style="font-size: 1.1em; color: #d35400;">Максимум:</span><br>
+                                <strong style="font-size: 2em; color: #d35400;" id="rep-max"></strong>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <div style="margin-top: 30px; height: 350px; width: 100%;">
+                    <div class="chart-container">
                         <canvas id="analyticsChart"></canvas>
                     </div>
                 </div>
@@ -107,7 +94,6 @@
             document.getElementById('rep-date').innerText = new Date().toLocaleString('uk-UA');
 
             container.style.display = 'block';
-
             renderChart(values, metricName);
         });
 
@@ -118,7 +104,6 @@
 
             const minV = Math.floor(Math.min(...dataValues) / 10) * 10;
             const maxV = Math.ceil(Math.max(...dataValues) / 10) * 10;
-            
             const labels = [];
             const dataCounts = [];
 
@@ -141,26 +126,10 @@
                     }]
                 },
                 options: {
-                    animation: false, /* ВИПРАВЛЕННЯ 1: Вимикаємо анімацію для чіткого PDF */
-                    responsive: true,
+                    animation: false, // ВИМКНУТИ АНІМАЦІЮ для PDF
+                    responsive: false, // ВИМКНУТИ РЕСАЙЗ для PDF
                     maintainAspectRatio: false,
-                    devicePixelRatio: 2, /* Покращує якість на екрані */
-                    plugins: {
-                        legend: {
-                            labels: {
-                                font: { size: 14 }
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: 10
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true,
-                            ticks: { precision: 0 } 
-                        }
-                    }
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
@@ -168,11 +137,11 @@
         btn.addEventListener('click', () => {
             const element = document.getElementById('pdf-report');
             const opt = {
-                margin:       5, // Менші поля, щоб графік вліз
-                filename:     `Звіт_${document.getElementById('rep-metric').innerText}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true }, 
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 5,
+                filename: `Звіт_${document.getElementById('rep-metric').innerText}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
         });
