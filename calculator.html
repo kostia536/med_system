@@ -94,9 +94,13 @@
             const form = document.getElementById('calc-form');
             const inputSection = document.getElementById('input-section');
             const reportSection = document.getElementById('report-section');
+            
+            // Якщо форми немає (наприклад, ми на іншій сторінці), зупиняємось
+            if (!form) return; 
+
             let myChart = null;
 
-            // Плагін для білого фону (щоб графік був непрозорим)
+            // Плагін для білого фону (щоб графік був красивим у PDF)
             const whiteBackgroundPlugin = {
                 id: 'customCanvasBackgroundColor',
                 beforeDraw: (chart) => {
@@ -138,7 +142,7 @@
                 const diffKg = userW - predictedW;
                 const diffPercent = (diffKg / predictedW) * 100;
 
-                // Заповнюємо звіт
+                // Заповнюємо дані звіту
                 document.getElementById('res-gender').textContent = gender;
                 document.getElementById('res-height').textContent = userH;
                 document.getElementById('res-weight').textContent = userW;
@@ -169,11 +173,11 @@
                 inputSection.style.display = 'none';
                 reportSection.style.display = 'block';
 
-                // Малюємо графік
-                renderRegressionChart(xValues, yValues, m, b, userH, userW);
+                // Малюємо графік (передаємо стать для налаштування меж)
+                renderRegressionChart(xValues, yValues, m, b, userH, userW, gender);
             });
 
-            function renderRegressionChart(xData, yData, m, b, userH, userW) {
+            function renderRegressionChart(xData, yData, m, b, userH, userW, gender) {
                 const ctx = document.getElementById('regressionChart').getContext('2d');
                 if (myChart) myChart.destroy();
 
@@ -181,13 +185,52 @@
                 const minH = Math.min(...xData);
                 const maxH = Math.max(...xData);
 
+                // === НАЛАШТУВАННЯ МЕЖ ГРАФІКА ===
+                let xLimits, yLimits;
+
+                if (gender === 'Чоловіча') {
+                    // Межі для Чоловіків
+                    xLimits = { min: 150, max: 210 };
+                    yLimits = { min: 50, max: 150 };
+                } else {
+                    // Межі для Жінок (зсунуті вниз)
+                    xLimits = { min: 140, max: 190 };
+                    yLimits = { min: 40, max: 110 };
+                }
+
+                // ВАЖЛИВО: Розширюємо межі, якщо користувач випадає з них
+                xLimits.min = Math.min(xLimits.min, userH - 5);
+                xLimits.max = Math.max(xLimits.max, userH + 5);
+                yLimits.min = Math.min(yLimits.min, userW - 5);
+                yLimits.max = Math.max(yLimits.max, userW + 5);
+
                 myChart = new Chart(ctx, {
                     type: 'scatter',
                     data: {
                         datasets: [
-                            { label: 'База', data: scatterData, backgroundColor: 'rgba(52, 152, 219, 0.5)', pointRadius: 3 },
-                            { label: 'Тренд', data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}], type: 'line', borderColor: 'black', borderWidth: 2, pointRadius: 0, fill: false },
-                            { label: 'ВИ', data: [{ x: userH, y: userW }], backgroundColor: 'red', pointRadius: 10, borderColor: 'black', borderWidth: 2 }
+                            { 
+                                label: 'База', 
+                                data: scatterData, 
+                                backgroundColor: 'rgba(52, 152, 219, 0.5)', 
+                                pointRadius: 3 
+                            },
+                            { 
+                                label: 'Тренд', 
+                                data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}], 
+                                type: 'line', 
+                                borderColor: 'black', 
+                                borderWidth: 2, 
+                                pointRadius: 0, 
+                                fill: false 
+                            },
+                            { 
+                                label: 'ВИ', 
+                                data: [{ x: userH, y: userW }], 
+                                backgroundColor: 'red', 
+                                pointRadius: 10, 
+                                borderColor: 'black', 
+                                borderWidth: 2 
+                            }
                         ]
                     },
                     plugins: [whiteBackgroundPlugin],
@@ -197,20 +240,29 @@
                         maintainAspectRatio: false,
                         devicePixelRatio: 2,
                         scales: {
-                            x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
-                            y: { title: { display: true, text: 'Вага (кг)' }, min: 40, max: 150 }
+                            x: { 
+                                type: 'linear', 
+                                position: 'bottom', 
+                                title: { display: true, text: 'Зріст (см)' }, 
+                                min: xLimits.min, 
+                                max: xLimits.max 
+                            },
+                            y: { 
+                                title: { display: true, text: 'Вага (кг)' }, 
+                                min: yLimits.min, 
+                                max: yLimits.max 
+                            }
                         }
                     }
                 });
 
-                // СТВОРЮЄМО КАРТИНКУ ДЛЯ ДРУКУ (ЗАТРИМКА 0.5с)
+                // Генерація картинки для друку
                 setTimeout(() => {
                     const imgData = myChart.toBase64Image();
                     const imgElem = document.getElementById('chart-img-print');
                     imgElem.src = imgData;
                     
-                    // Автоматичний друк через 1с після малювання, 
-                    // щоб користувач встиг побачити результат на екрані.
+                    // Автоматичний друк через 1с
                     setTimeout(() => window.print(), 1000);
                 }, 500);
             }
