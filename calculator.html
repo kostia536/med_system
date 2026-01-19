@@ -13,6 +13,7 @@
         <button onclick="location.href='index.html'" class="nav-btn">⬅ На головну</button>
         
         <h1>Калькулятор "Статистична Норма"</h1>
+        
         <form id="calc-form">
             <div class="form-group">
                 <label>Ваша стать:
@@ -38,7 +39,7 @@
                 <table class="pdf-table">
                     <tr>
                         <td><strong>Пацієнт:</strong> Анонімний</td>
-                        <td><strong>Дата:</strong> <span id="report-date"></span></td>
+                        <td><strong>Дата аналізу:</strong> <span id="report-date"></span></td>
                     </tr>
                     <tr>
                         <td><strong>Стать:</strong> <span id="res-gender"></span></td>
@@ -54,7 +55,6 @@
             <div style="margin-top: 30px;">
                 <h3>2. Результат моделювання</h3>
                 <p>База даних: <span id="db-count"></span> записів. Прогноз:</p>
-                
                 <div class="calc-result-box" id="result-box">
                     <h1 style="margin: 0; font-size: 3em;" id="pred-weight">-- кг</h1>
                     <p style="margin: 10px 0 0 0; font-size: 1.2em;">
@@ -66,11 +66,11 @@
 
             <div style="margin-top: 30px;">
                 <h3>3. Візуалізація</h3>
-                <p style="font-size: 0.8em; color: #666;">Сині точки - база. Червона лінія - тренд. <strong>Ви - велике коло.</strong></p>
+                <p style="font-size: 0.8em; color: #666;">Сині точки - база. Червона лінія - тренд. <br><strong>Велике червоне коло - це ви.</strong></p>
                 
                 <div class="chart-container">
                     <canvas id="regressionChart"></canvas>
-                    <img id="chart-img-print" style="display: none;" alt="Графік">
+                    <img id="chart-img-print" alt="Графік аналізу">
                 </div>
             </div>
 
@@ -81,6 +81,19 @@
     </main>
 
     <script>
+        // === ПЛАГІН ДЛЯ БІЛОГО ФОНУ ГРАФІКА (ЩОБ НЕ БУВ ПРОЗОРИМ) ===
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
         const form = document.getElementById('calc-form');
         let myChart = null;
 
@@ -88,8 +101,7 @@
             const n = x.length;
             let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
             for (let i = 0; i < n; i++) {
-                sumX += x[i]; sumY += y[i];
-                sumXY += (x[i] * y[i]); sumXX += (x[i] * x[i]);
+                sumX += x[i]; sumY += y[i]; sumXY += (x[i] * y[i]); sumXX += (x[i] * x[i]);
             }
             const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
             const intercept = (sumY - slope * sumX) / n;
@@ -99,11 +111,10 @@
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             
+            // 1. Збір даних
             const gender = form.elements.gender.value;
             const userH = Number(form.elements.height.value);
             const userW = Number(form.elements.weight.value);
-
-            // 1. Отримуємо дані
             const db = getDatabase();
             const filteredData = db.filter(p => p.gender === gender && p.height > 0 && p.weight > 0);
 
@@ -112,13 +123,13 @@
             const xValues = filteredData.map(p => p.height);
             const yValues = filteredData.map(p => p.weight);
             
-            // 2. Рахуємо
+            // 2. Розрахунок
             const { m, b } = calculateLinearRegression(xValues, yValues);
             const predictedW = (m * userH) + b;
             const diffKg = userW - predictedW;
             const diffPercent = (diffKg / predictedW) * 100;
 
-            // 3. Оновлюємо DOM
+            // 3. Оновлення тексту (HTML)
             document.getElementById('res-gender').innerText = gender;
             document.getElementById('res-height').innerText = userH;
             document.getElementById('res-weight').innerText = userW;
@@ -131,7 +142,7 @@
 
             const boxEl = document.getElementById('result-box');
             const textEl = document.getElementById('diff-text');
-            boxEl.className = 'calc-result-box';
+            boxEl.className = 'calc-result-box'; // скидання
             
             if (Math.abs(diffPercent) <= 10) {
                 boxEl.classList.add('result-good');
@@ -144,7 +155,7 @@
                 textEl.innerText = "Значне відхилення.";
             }
 
-            // 4. Малюємо графік
+            // 4. Малювання графіка і друк
             renderRegressionChart(xValues, yValues, m, b, userH, userW);
         });
 
@@ -160,57 +171,37 @@
                 type: 'scatter',
                 data: {
                     datasets: [
-                        {
-                            label: 'База',
-                            data: scatterData,
-                            backgroundColor: 'rgba(52, 152, 219, 0.5)',
-                            pointRadius: 3
-                        },
-                        {
-                            label: 'Тренд',
-                            data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}],
-                            type: 'line',
-                            borderColor: 'rgba(0, 0, 0, 0.8)', /* Чорна лінія для контрасту */
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            fill: false
-                        },
-                        {
-                            label: 'ВИ',
-                            data: [{ x: userH, y: userW }],
-                            backgroundColor: '#e74c3c',
-                            pointRadius: 12, /* Більша точка */
-                            borderColor: 'black',
-                            borderWidth: 2
-                        }
+                        { label: 'База', data: scatterData, backgroundColor: 'rgba(52, 152, 219, 0.5)', pointRadius: 3 },
+                        { label: 'Тренд', data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}], type: 'line', borderColor: 'black', borderWidth: 2, pointRadius: 0, fill: false },
+                        { label: 'ВИ', data: [{ x: userH, y: userW }], backgroundColor: 'red', pointRadius: 10, borderColor: 'black', borderWidth: 2 }
                     ]
                 },
+                plugins: [whiteBackgroundPlugin], // Додаємо білий фон
                 options: {
-                    animation: false,
+                    animation: false, // Без анімації
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: 2,
                     scales: {
-                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' } },
-                        y: { title: { display: true, text: 'Вага (кг)' } }
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
+                        y: { title: { display: true, text: 'Вага (кг)' }, min: 40, max: 150 }
                     }
                 }
             });
 
-            // 5. ПІДГОТОВКА ДО ДРУКУ (Чекаємо і робимо скріншот графіка)
-            setTimeout(() => {
-                // Перетворюємо графік на картинку Base64
-                const imgData = document.getElementById('regressionChart').toDataURL('image/png');
-                const imgElem = document.getElementById('chart-img-print');
-                
-                // Вставляємо картинку в прихований тег <img>
-                imgElem.src = imgData;
-                
-                // Чекаємо ще трохи, щоб картинка провантажилась в DOM, і друкуємо
-                setTimeout(() => {
-                    window.print();
-                }, 500);
-            }, 800);
+            // === КЛЮЧОВИЙ МОМЕНТ: ПІДГОТОВКА ДО ДРУКУ ===
+            // Ми беремо URL картинки з графіка
+            const imgData = myChart.toBase64Image();
+            const imgElem = document.getElementById('chart-img-print');
+            
+            // Встановлюємо картинку
+            imgElem.src = imgData;
+
+            // ЧЕКАЄМО ПОДІЮ ЗАВАНТАЖЕННЯ КАРТИНКИ (onload)
+            // Тільки коли картинка готова, ми відкриваємо друк
+            imgElem.onload = function() {
+                window.print();
+            };
         }
     </script>
 </body>
