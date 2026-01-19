@@ -30,24 +30,21 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 .result-warn { border-color: #f39c12; background: #fef9e7; color: #d35400; }
 .result-bad { border-color: #c0392b; background: #fdedec; color: #c0392b; }
 
-/* ГРАФІКИ */
+/* ГРАФІК */
 .chart-container { 
     position: relative; 
     height: 400px; 
     width: 100%; 
-    margin-top: 30px;
-    display: flex; justify-content: center; align-items: center; 
+    margin-top: 30px; 
 }
 
-/* Зображення для друку (спочатку приховане) */
+/* Зображення для друку */
 #chart-img-print {
-    display: none;
+    display: none; /* За замовчуванням ховаємо картинку, показуємо canvas */
     max-width: 100%;
     height: auto;
+    margin: 0 auto;
 }
-
-/* Блоки тільки для PDF */
-.only-pdf { display: none; }
 
 /* === НАЛАШТУВАННЯ ДРУКУ === */
 @media print {
@@ -58,34 +55,28 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
         -webkit-print-color-adjust: exact; print-color-adjust: exact; 
     }
 
-    /* Ховаємо інтерфейс */
-    .container > *:not(.printable-area) { display: none !important; }
-    .nav-btn, .save-btn, form, h1 { display: none !important; }
+    /* Ховаємо навігацію і форму */
+    .nav-btn, .save-btn, form, h1, .form-group { display: none !important; }
+    .container { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
 
-    /* Показуємо звіт */
-    .printable-area {
+    /* Показуємо звіт, навіть якщо він був прихований */
+    #pdf-report {
         display: block !important;
-        visibility: visible !important;
-        position: relative;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
+        border: none;
+        padding: 0;
+        margin: 0;
     }
 
-    .only-pdf { display: block !important; }
-
-    /* === ВАЖЛИВО: ПІДМІНА ГРАФІКА === */
-    /* Ховаємо canvas (він глючить при друку) */
+    /* === ПІДМІНА ГРАФІКА ДЛЯ ПРИНТЕРА === */
+    /* Ховаємо живий canvas */
     canvas { display: none !important; }
     
-    /* Показуємо картинку JPG */
+    /* Показуємо картинку (скріншот графіка) */
     #chart-img-print {
         display: block !important;
-        visibility: visible !important;
     }
 
-    /* Щоб не зникав текст результатів */
+    /* Чорний текст для значень */
     #pred-weight, #diff-percent { color: #000 !important; }
     
     .calc-result-box, .chart-container { break-inside: avoid; }
