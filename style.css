@@ -59,14 +59,22 @@ button {
 
 /* === Стилі для PDF шаблону === */
 /* Це те, як документ буде виглядати на екрані та в PDF */
+/* Жорстке обмеження ширини для шаблонів, щоб вони влазили в А4 */
 .pdf-template {
-    border: 1px solid #ddd;
-    padding: 40px;
+    width: 700px; /* Фіксована ширина, яка гарантовано влізе в PDF */
+    margin: 20px auto; /* Центрування */
     background: #fff;
-    margin-top: 20px;
-    border-radius: 5px;
-    /* Імітація аркуша А4 */
-    box-shadow: 0 0 15px rgba(0,0,0,0.05); 
+    padding: 30px;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Для екранів мобільних телефонів, щоб не вилазило */
+@media (max-width: 768px) {
+    .pdf-template {
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 /* Замінюємо Grid на Flexbox, який html2pdf розуміє ідеально */
