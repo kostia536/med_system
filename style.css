@@ -107,3 +107,86 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     /* Заборона розриву сторінки всередині блоків */
     .calc-result-box, .chart-container { break-inside: avoid; }
 }
+
+/* === СТИЛІ ДЛЯ doctor.html === */
+
+/* Панель фільтрів */
+.filter-panel {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.radio-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.radio-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+}
+
+.radio-btn:hover { background: #f1f1f1; }
+.radio-btn input { width: auto; margin: 0; }
+
+/* Стилі для конкретних радіокнопок при виборі */
+.radio-btn:has(input:checked) {
+    border-color: #3498db;
+    background-color: #ebf5fb;
+    font-weight: bold;
+    color: #2980b9;
+}
+
+.radio-btn.warning:has(input:checked) {
+    border-color: #c0392b;
+    background-color: #fdedec;
+    color: #c0392b;
+}
+
+.radio-btn.good:has(input:checked) {
+    border-color: #27ae60;
+    background-color: #eafaf1;
+    color: #27ae60;
+}
+
+/* Таблиця для звіту */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.data-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+/* Специфічні стилі друку для цієї сторінки */
+@media print {
+    #interface-section { display: none !important; }
+    #print-section { display: block !important; }
+    
+    /* Таблиця на весь аркуш */
+    .data-table { font-size: 12px; }
+    .data-table th, .data-table td { border: 1px solid #000; }
+}
