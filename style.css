@@ -2,7 +2,7 @@
 
 /* ЗАГАЛЬНІ */
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
-.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; z-index: 10; } /* z-index важливий, щоб форма була зверху */
 h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
 h2 { margin-top: 0; }
 hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
@@ -18,14 +18,40 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 .save-btn { background-color: #3498db; color: white; width: 100%; margin-top: 10px; }
 .nav-btn { background-color: #95a5a6; color: white; margin-bottom: 20px; margin-right: 10px; }
 
-/* ЕЛЕМЕНТИ ЗВІТУ */
-.pdf-template { border: 1px solid #e0e0e0; padding: 40px; background: #fff; margin-top: 30px; border-radius: 5px; }
+/* === ЕЛЕМЕНТИ ЗВІТУ (НОВИЙ МЕТОД ПРИХОВУВАННЯ) === */
+#pdf-report {
+    /* Замість винесення за межі екрану, ми робимо його прозорим і кладемо під низ */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    opacity: 0; /* Невидимий для ока */
+    z-index: -100; /* Лежить під контейнером з формою */
+    pointer-events: none; /* Не клікабельний */
+    
+    background: #fff;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
 .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .pdf-table td { padding: 8px 5px; border-bottom: 1px solid #eee; vertical-align: top; width: 50%; }
 .footer { margin-top: 40px; font-size: 0.8em; color: #888; text-align: right; border-top: 2px solid #eee; padding-top: 10px; }
 
 /* РЕЗУЛЬТАТИ */
-.calc-result-box { margin-top: 20px; padding: 20px; border-radius: 8px; text-align: center; border: 2px solid #ddd; background-color: #f9f9f9; }
+.calc-result-box { 
+    margin-top: 20px; 
+    padding: 20px; 
+    border-radius: 8px; 
+    text-align: center; 
+    border: 2px solid #ddd; 
+    background-color: #f9f9f9;
+    
+    /* ГАРАНТІЯ МІСЦЯ: Мінімальна висота, щоб блок не схлопнувся */
+    min-height: 120px; 
+    display: block;
+}
+
 .result-good { border-color: #27ae60; background: #eafaf1; color: #218c53; }
 .result-warn { border-color: #f39c12; background: #fef9e7; color: #d35400; }
 .result-bad { border-color: #c0392b; background: #fdedec; color: #c0392b; }
@@ -36,14 +62,13 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     height: 400px; 
     width: 100%; 
     margin-top: 30px; 
+    display: flex; justify-content: center; align-items: center; 
 }
 
-/* Зображення для друку */
 #chart-img-print {
-    display: none; /* За замовчуванням ховаємо картинку, показуємо canvas */
+    display: none;
     max-width: 100%;
     height: auto;
-    margin: 0 auto;
 }
 
 /* === НАЛАШТУВАННЯ ДРУКУ === */
@@ -53,31 +78,37 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     body { 
         background-color: white; padding: 0; margin: 0; 
         -webkit-print-color-adjust: exact; print-color-adjust: exact; 
+        overflow: visible !important;
     }
 
-    /* Ховаємо навігацію і форму */
-    .nav-btn, .save-btn, form, h1, .form-group { display: none !important; }
-    .container { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
+    /* Ховаємо форму */
+    .container > *:not(#pdf-report) { display: none !important; }
+    .nav-btn, .save-btn, form, h1 { display: none !important; }
 
-    /* Показуємо звіт, навіть якщо він був прихований */
+    /* === ПОВЕРТАЄМО ЗВІТ (РОБИМО ВИДИМИМ) === */
     #pdf-report {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        opacity: 1 !important; /* Робимо видимим */
+        z-index: 9999 !important; /* На передній план */
         display: block !important;
-        border: none;
-        padding: 0;
-        margin: 0;
+        visibility: visible !important;
+        width: 100% !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
     }
 
-    /* === ПІДМІНА ГРАФІКА ДЛЯ ПРИНТЕРА === */
-    /* Ховаємо живий canvas */
+    /* ПІДМІНА ГРАФІКА */
     canvas { display: none !important; }
-    
-    /* Показуємо картинку (скріншот графіка) */
-    #chart-img-print {
-        display: block !important;
-    }
+    #chart-img-print { display: block !important; }
 
-    /* Чорний текст для значень */
-    #pred-weight, #diff-percent { color: #000 !important; }
+    /* ПРИМУСОВИЙ ЧОРНИЙ КОЛІР ДЛЯ ТЕКСТУ */
+    #pred-weight, #diff-percent, .calc-result-box h1, .calc-result-box p { 
+        color: #000000 !important; 
+        visibility: visible !important;
+    }
     
     .calc-result-box, .chart-container { break-inside: avoid; }
 }
