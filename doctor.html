@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кабінет Лікаря</title>
+    <title>Кабінет лікаря</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="data.js"></script>
 </head>
 <body>
     <main class="container">
-        <div class="dropdown">
-            <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
-            <div id="myDropdown" class="dropdown-content">
-                <a href="index.html">Головна (Реєстрація)</a>
-                <a href="report.html">Агреговані звіти</a>
-                <a href="calculator.html">Калькулятор норми ваги</a>
+        
+        <div id="interface-section">
+            
+            <div class="dropdown">
+                <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+                <div id="myDropdown" class="dropdown-content">
+                    <a href="index.html">Головна (Реєстрація)</a>
+                    <a href="report.html">Агреговані звіти</a>
+                    <a href="calculator.html">Калькулятор норми ваги</a>
+                </div>
             </div>
-        </div>
+
+            <h1>Кабінет лікаря: моніторинг ризиків</h1>
 
             <div class="filter-panel">
                 <h3>Фільтр пацієнтів:</h3>
@@ -97,8 +102,7 @@
     </main>
 
     <script>
-        let myChart = null;
-
+        // === ЛОГІКА МЕНЮ ===
         function toggleMenu() {
             document.getElementById("myDropdown").classList.toggle("show");
         }
@@ -114,25 +118,8 @@
             }
         }
 
-        // Плагін для малювання кольорових зон (Heatmap ефект)
-        const backgroundPlugin = {
-            id: 'customCanvasBackgroundColor',
-            beforeDraw: (chart) => {
-                const ctx = chart.canvas.getContext('2d');
-                const {top, left, width, height} = chart.chartArea;
-                const x = chart.scales.x;
-                const y = chart.scales.y;
-
-                ctx.save();
-                
-                // Зона ожиріння (BMI > 30) - Червонуватий фон зверху
-                // Це складні криві, тому для простоти зафарбуємо загальний фон
-                ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                ctx.fillRect(0, 0, chart.width, chart.height);
-                
-                ctx.restore();
-            }
-        };
+        // === ОСНОВНА ЛОГІКА ===
+        let myChart = null;
 
         function calculateAge(birthYear) {
             return new Date().getFullYear() - birthYear;
@@ -150,40 +137,34 @@
             const filterValue = document.querySelector('input[name="filter"]:checked').value;
             const db = getDatabase();
             
-            // 1. Фільтрація даних
-            let filteredData = db.filter(p => p.height > 0 && p.weight > 0); // Валідні дані
-
+            // 1. Фільтрація
+            let filteredData = db.filter(p => p.height > 0 && p.weight > 0);
             if (filterValue === 'critical') {
                 filteredData = filteredData.filter(p => p.bmi < 18.5 || p.bmi > 35);
             } else if (filterValue === 'normal') {
                 filteredData = filteredData.filter(p => p.bmi >= 18.5 && p.bmi <= 25);
             }
 
-            // 2. Аналітика
+            // 2. Статистика
             const count = filteredData.length;
-            
-            // Середній вік
             let avgAge = 0;
             if (count > 0) {
                 const totalAge = filteredData.reduce((sum, p) => sum + calculateAge(p.birthYear), 0);
                 avgAge = (totalAge / count).toFixed(1);
             }
-
-            // Стать
             let maleCount = filteredData.filter(p => p.gender === 'Чоловіча' || p.gender === 'M').length;
             let femaleCount = count - maleCount;
             let genderStr = maleCount > femaleCount ? `Чоловіча (${maleCount})` : `Жіноча (${femaleCount})`;
             if (count === 0) genderStr = "--";
 
-            // Оновлення карток
             document.getElementById('stat-count').innerText = count;
             document.getElementById('stat-age').innerText = avgAge;
             document.getElementById('stat-gender').innerText = genderStr;
 
-            // 3. Візуалізація
+            // 3. Графік
             drawChart(filteredData, filterValue);
 
-            // 4. Підготовка таблиці для звіту (тільки критичні)
+            // 4. Заповнення таблиці для друку (ЗАВЖДИ "Критичні")
             const criticalPatients = db.filter(p => p.bmi < 18.5 || p.bmi > 35);
             fillReportTable(criticalPatients);
         }
@@ -192,24 +173,20 @@
             const ctx = document.getElementById('doctorChart').getContext('2d');
             if (myChart) myChart.destroy();
 
-            // Формуємо масив точок
             const scatterData = data.map(p => ({
                 x: p.height,
                 y: p.weight,
-                // Додаткові дані для tooltip
                 person: p 
             }));
 
-            // Визначаємо колір точок залежно від режиму
-            let pointColor = '#3498db'; // Синій (стандарт)
-            if (filterMode === 'critical') pointColor = '#e74c3c'; // Червоний
-            if (filterMode === 'normal') pointColor = '#27ae60'; // Зелений
+            let pointColor = '#3498db'; 
+            if (filterMode === 'critical') pointColor = '#e74c3c';
+            if (filterMode === 'normal') pointColor = '#27ae60';
 
-            // Якщо режим "Всі", розфарбовуємо динамічно
             const dynamicColors = filterMode === 'all' ? data.map(p => {
-                if (p.bmi > 35 || p.bmi < 18.5) return '#e74c3c'; // Критичні
-                if (p.bmi >= 18.5 && p.bmi <= 25) return '#27ae60'; // Норма
-                return '#f1c40f'; // Інші
+                if (p.bmi > 35 || p.bmi < 18.5) return '#e74c3c';
+                if (p.bmi >= 18.5 && p.bmi <= 25) return '#27ae60';
+                return '#f1c40f'; 
             }) : pointColor;
 
             myChart = new Chart(ctx, {
@@ -219,8 +196,7 @@
                         label: 'Пацієнти',
                         data: scatterData,
                         backgroundColor: dynamicColors,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
+                        pointRadius: 5
                     }]
                 },
                 options: {
@@ -236,21 +212,11 @@
                                     return `ID: ${p.id}, ІМТ: ${p.bmi}`;
                                 }
                             }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Розподіл: Зріст vs Вага'
                         }
                     },
                     scales: {
-                        x: { 
-                            title: { display: true, text: 'Зріст (см)' },
-                            min: 140, max: 210
-                        },
-                        y: { 
-                            title: { display: true, text: 'Вага (кг)' },
-                            min: 30, max: 160
-                        }
+                        x: { title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
+                        y: { title: { display: true, text: 'Вага (кг)' }, min: 30, max: 160 }
                     }
                 }
             });
@@ -259,45 +225,41 @@
         function fillReportTable(patients) {
             const tbody = document.getElementById('report-table-body');
             tbody.innerHTML = '';
-
             patients.forEach(p => {
                 const tr = document.createElement('tr');
-                const age = calculateAge(p.birthYear);
-                const problem = getProblemDescription(p.bmi);
-                
                 tr.innerHTML = `
                     <td><strong>${p.id}</strong></td>
                     <td>${p.gender}</td>
-                    <td>${age}</td>
+                    <td>${calculateAge(p.birthYear)}</td>
                     <td>${p.height} / ${p.weight}</td>
                     <td style="color: #c0392b; font-weight: bold;">${p.bmi}</td>
-                    <td>${problem}</td>
+                    <td>${getProblemDescription(p.bmi)}</td>
                 `;
                 tbody.appendChild(tr);
             });
-
             document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
         }
 
         function printReport() {
-            // Перемикаємо видимість для друку
+            console.log("Кнопку друку натиснуто"); // Для перевірки в консолі (F12)
+            
             const interfaceSection = document.getElementById('interface-section');
             const printSection = document.getElementById('print-section');
 
+            // Ховаємо інтерфейс, показуємо звіт
             interfaceSection.style.display = 'none';
             printSection.style.display = 'block';
 
             setTimeout(() => {
                 window.print();
                 
-                // Повертаємо назад після друку (або скасування)
-                // Увага: window.print блокує виконання JS, тому цей код спрацює ПІСЛЯ закриття вікна друку
+                // Повертаємо назад
                 interfaceSection.style.display = 'block';
                 printSection.style.display = 'none';
             }, 500);
         }
 
-        // Запуск при завантаженні
+        // Запуск
         document.addEventListener('DOMContentLoaded', updateDashboard);
     </script>
 </body>
