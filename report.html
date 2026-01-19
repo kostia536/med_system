@@ -11,8 +11,15 @@
 </head>
 <body>
     <main class="container">
-        <div id="input-section">
-            <button onclick="location.href='index.html'" class="nav-btn">⬅ Назад до реєстрації</button>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="index.html">Головна (Реєстрація)</a>
+                <a href="report.html">Агреговані звіти</a>
+                <a href="calculator.html">Калькулятор норми ваги</a>
+                <a href="doctor.html">Кабінет лікаря</a>
+            </div>
+        </div>
             
             <h1>Агрегований звіт</h1>
 
@@ -71,6 +78,21 @@
         const btn = document.getElementById('download-rep-btn');
         let myChart = null;
 
+        function toggleMenu() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+        
         // Плагін для білого фону (щоб графік був видимим у PDF)
         const whiteBackgroundPlugin = {
             id: 'customCanvasBackgroundColor',
