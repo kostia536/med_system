@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аналіз ваги</title>
+    <title>Аналіз ваги (Регресійна модель)</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="data.js"></script>
 </head>
@@ -54,7 +55,11 @@
 
             <div style="margin-top: 30px;">
                 <h3>2. Результат моделювання</h3>
-                <p>База даних: <span id="db-count"></span> записів. Прогноз:</p>
+                <p>
+                    На основі лінійної регресії бази даних (<span id="db-count"></span> записів), 
+                    прогнозована "статистична норма" для вашого зросту складає:
+                </p>
+                
                 <div class="calc-result-box" id="result-box">
                     <h1 style="margin: 0; font-size: 3em;" id="pred-weight">-- кг</h1>
                     <p style="margin: 10px 0 0 0; font-size: 1.2em;">
@@ -66,7 +71,10 @@
 
             <div style="margin-top: 30px;">
                 <h3>3. Візуалізація</h3>
-                <p style="font-size: 0.8em; color: #666;">Сині точки - база. Червона лінія - тренд. <br><strong>Велике червоне коло - це ви.</strong></p>
+                <p style="font-size: 0.8em; color: #666;">
+                    Сині точки - база. Червона лінія - тренд. <br>
+                    <strong>Велике червоне коло - це ви.</strong>
+                </p>
                 
                 <div class="chart-container">
                     <canvas id="regressionChart"></canvas>
@@ -75,158 +83,163 @@
             </div>
 
             <div class="footer">
-                <p>Метод: Лінійна регресія (Least Squares).</p>
+                <p>Метод: Лінійна регресія (Least Squares). Не є медичним діагнозом.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // === ЗАХИСНА ОБГОРТКА DOMContentLoaded ===
-        // Весь код всередині запуститься тільки тоді, коли HTML повністю завантажиться
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            const form = document.getElementById('calc-form');
-            // Перевірка, чи знайшли ми форму (щоб уникнути помилки null)
-            if (!form) {
-                console.error("Помилка: Форму не знайдено!");
+        console.log("Скрипт запущено!"); // Перевірка в консолі
+
+        const form = document.getElementById('calc-form');
+        let myChart = null;
+
+        // Плагін для білого фону (щоб графік було видно при друку)
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        // Функція регресії
+        function calculateLinearRegression(x, y) {
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += x[i]; sumY += y[i]; sumXY += (x[i] * y[i]); sumXX += (x[i] * x[i]);
+            }
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            return { m: slope, b: intercept };
+        }
+
+        // Обробка натискання кнопки
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log("Кнопку натиснуто, починаємо розрахунок...");
+
+            const gender = form.elements.gender.value;
+            const userH = Number(form.elements.height.value);
+            const userW = Number(form.elements.weight.value);
+
+            // Перевірка бази даних
+            if (typeof getDatabase !== 'function') {
+                alert("Помилка: База даних data.js не підключена!");
                 return;
             }
 
-            let myChart = null;
+            const db = getDatabase();
+            const filteredData = db.filter(p => p.gender === gender && p.height > 0 && p.weight > 0);
 
-            // Плагін для білого фону (щоб графік не був прозорим при друку)
-            const whiteBackgroundPlugin = {
-                id: 'customCanvasBackgroundColor',
-                beforeDraw: (chart) => {
-                    const ctx = chart.canvas.getContext('2d');
-                    ctx.save();
-                    ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, chart.width, chart.height);
-                    ctx.restore();
-                }
-            };
-
-            // Функція розрахунку регресії
-            function calculateLinearRegression(x, y) {
-                const n = x.length;
-                let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-                for (let i = 0; i < n; i++) {
-                    sumX += x[i]; sumY += y[i]; sumXY += (x[i] * y[i]); sumXX += (x[i] * x[i]);
-                }
-                const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-                const intercept = (sumY - slope * sumX) / n;
-                return { m: slope, b: intercept };
+            if (filteredData.length < 10) {
+                alert("Недостатньо даних у базі для аналізу!");
+                return;
             }
 
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const gender = form.elements.gender.value;
-                const userH = Number(form.elements.height.value);
-                const userW = Number(form.elements.weight.value);
+            const xValues = filteredData.map(p => p.height);
+            const yValues = filteredData.map(p => p.weight);
+            
+            // Розрахунок
+            const { m, b } = calculateLinearRegression(xValues, yValues);
+            const predictedW = (m * userH) + b;
+            const diffKg = userW - predictedW;
+            const diffPercent = (diffKg / predictedW) * 100;
 
-                // Перевірка наявності бази даних
-                if (typeof getDatabase !== 'function') {
-                    alert("Помилка: Файл data.js не підключено або він порожній!");
-                    return;
+            console.log("Прогнозована вага:", predictedW);
+
+            // Оновлення HTML
+            document.getElementById('res-gender').innerText = gender;
+            document.getElementById('res-height').innerText = userH;
+            document.getElementById('res-weight').innerText = userW;
+            document.getElementById('db-count').innerText = filteredData.length;
+            document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
+
+            document.getElementById('pred-weight').innerText = `${predictedW.toFixed(1)} кг`;
+            
+            const sign = diffPercent > 0 ? "+" : "";
+            document.getElementById('diff-percent').innerText = `${sign}${diffPercent.toFixed(1)}%`;
+
+            const boxEl = document.getElementById('result-box');
+            const textEl = document.getElementById('diff-text');
+            
+            // Очищення класів
+            boxEl.className = 'calc-result-box';
+            
+            if (Math.abs(diffPercent) <= 10) {
+                boxEl.classList.add('result-good');
+                textEl.innerText = "Ваша вага в межах статистичної норми.";
+            } else if (Math.abs(diffPercent) <= 20) {
+                boxEl.classList.add('result-warn');
+                textEl.innerText = diffPercent > 0 ? "Вище середнього." : "Нижче середнього.";
+            } else {
+                boxEl.classList.add('result-bad');
+                textEl.innerText = "Значне відхилення від статистики.";
+            }
+
+            // Малюємо графік
+            renderRegressionChart(xValues, yValues, m, b, userH, userW);
+        });
+
+        function renderRegressionChart(xData, yData, m, b, userH, userW) {
+            const ctx = document.getElementById('regressionChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            const scatterData = xData.map((h, i) => ({ x: h, y: yData[i] }));
+            const minH = Math.min(...xData);
+            const maxH = Math.max(...xData);
+
+            myChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'База', data: scatterData, backgroundColor: 'rgba(52, 152, 219, 0.5)', pointRadius: 3 },
+                        { label: 'Тренд', data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}], type: 'line', borderColor: 'black', borderWidth: 2, pointRadius: 0, fill: false },
+                        { label: 'ВИ', data: [{ x: userH, y: userW }], backgroundColor: 'red', pointRadius: 10, borderColor: 'black', borderWidth: 2 }
+                    ]
+                },
+                plugins: [whiteBackgroundPlugin],
+                options: {
+                    animation: false, // Без анімації
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 2,
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
+                        y: { title: { display: true, text: 'Вага (кг)' }, min: 40, max: 150 }
+                    }
                 }
-
-                const db = getDatabase();
-                const filteredData = db.filter(p => p.gender === gender && p.height > 0 && p.weight > 0);
-
-                if (filteredData.length < 10) { alert("Мало даних!"); return; }
-
-                const xValues = filteredData.map(p => p.height);
-                const yValues = filteredData.map(p => p.weight);
-                
-                const { m, b } = calculateLinearRegression(xValues, yValues);
-                const predictedW = (m * userH) + b;
-                const diffKg = userW - predictedW;
-                const diffPercent = (diffKg / predictedW) * 100;
-
-                // Оновлення DOM
-                document.getElementById('res-gender').innerText = gender;
-                document.getElementById('res-height').innerText = userH;
-                document.getElementById('res-weight').innerText = userW;
-                document.getElementById('db-count').innerText = filteredData.length;
-                document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
-
-                document.getElementById('pred-weight').innerText = `${predictedW.toFixed(1)} кг`;
-                const sign = diffPercent > 0 ? "+" : "";
-                document.getElementById('diff-percent').innerText = `${sign}${diffPercent.toFixed(1)}%`;
-
-                const boxEl = document.getElementById('result-box');
-                const textEl = document.getElementById('diff-text');
-                boxEl.className = 'calc-result-box'; 
-                
-                if (Math.abs(diffPercent) <= 10) {
-                    boxEl.classList.add('result-good');
-                    textEl.innerText = "У межах норми.";
-                } else if (Math.abs(diffPercent) <= 20) {
-                    boxEl.classList.add('result-warn');
-                    textEl.innerText = diffPercent > 0 ? "Вище середнього." : "Нижче середнього.";
-                } else {
-                    boxEl.classList.add('result-bad');
-                    textEl.innerText = "Значне відхилення.";
-                }
-
-                // Малювання графіка
-                renderRegressionChart(xValues, yValues, m, b, userH, userW);
             });
 
-            function renderRegressionChart(xData, yData, m, b, userH, userW) {
-                const ctx = document.getElementById('regressionChart').getContext('2d');
-                if (myChart) myChart.destroy();
+            // Підготовка до друку
+            console.log("Графік створено. Чекаємо...");
+            
+            setTimeout(() => {
+                try {
+                    const imgData = myChart.toBase64Image();
+                    const imgElem = document.getElementById('chart-img-print');
+                    imgElem.src = imgData;
+                    
+                    console.log("Картинку згенеровано. Запуск друку...");
+                    
+                    // Відкриваємо друк ТІЛЬКИ коли картинка завантажиться
+                    imgElem.onload = function() {
+                         window.print();
+                    };
+                    
+                    // Страховка: якщо onload не спрацює швидко, все одно друкуємо
+                    setTimeout(() => window.print(), 500);
 
-                const scatterData = xData.map((h, i) => ({ x: h, y: yData[i] }));
-                const minH = Math.min(...xData);
-                const maxH = Math.max(...xData);
-
-                myChart = new Chart(ctx, {
-                    type: 'scatter',
-                    data: {
-                        datasets: [
-                            { label: 'База', data: scatterData, backgroundColor: 'rgba(52, 152, 219, 0.5)', pointRadius: 3 },
-                            { label: 'Тренд', data: [{x: minH, y: m*minH+b}, {x: maxH, y: m*maxH+b}], type: 'line', borderColor: 'black', borderWidth: 2, pointRadius: 0, fill: false },
-                            { label: 'ВИ', data: [{ x: userH, y: userW }], backgroundColor: 'red', pointRadius: 10, borderColor: 'black', borderWidth: 2 }
-                        ]
-                    },
-                    plugins: [whiteBackgroundPlugin],
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        devicePixelRatio: 2,
-                        scales: {
-                            x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Зріст (см)' }, min: 140, max: 210 },
-                            y: { title: { display: true, text: 'Вага (кг)' }, min: 40, max: 150 }
-                        }
-                    }
-                });
-
-                // Підготовка до друку
-                console.log("Графік створено. Конвертація...");
-                
-                setTimeout(() => {
-                    try {
-                        const imgData = myChart.toBase64Image();
-                        const imgElem = document.getElementById('chart-img-print');
-                        imgElem.src = imgData;
-                        
-                        console.log("Картинка готова. Запуск друку...");
-                        
-                        setTimeout(() => {
-                            window.print();
-                        }, 300);
-
-                    } catch (err) {
-                        console.error("Помилка друку:", err);
-                    }
-                }, 800);
-            }
-
-        }); // Кінець DOMContentLoaded
+                } catch (err) {
+                    console.error("Помилка друку:", err);
+                }
+            }, 500);
+        }
     </script>
 </body>
 </html>
