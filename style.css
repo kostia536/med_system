@@ -69,17 +69,21 @@ button {
     box-shadow: 0 0 15px rgba(0,0,0,0.05); 
 }
 
+/* Замінюємо Grid на Flexbox, який html2pdf розуміє ідеально */
 .card-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Дві колонки */
-    gap: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Відступ між колонками */
     margin-top: 20px;
 }
 
+/* Робимо елементи "напівшириною" (по 2 в ряд) */
 .card-grid p {
+    flex: 1 1 45%; /* Ширина приблизно 45% */
     border-bottom: 1px dashed #eee;
     padding-bottom: 5px;
     margin: 5px 0;
+    min-width: 250px; /* Щоб не стискалися занадто сильно */
 }
 
 .footer {
