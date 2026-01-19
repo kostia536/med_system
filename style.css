@@ -1,64 +1,50 @@
-/* === ЗАГАЛЬНІ СТИЛІ === */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
-    padding: 20px;
-    color: #333;
-}
+/* === style.css === */
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
+/* ЗАГАЛЬНІ */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
 h2 { margin-top: 0; }
 hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 
-/* Форми та Кнопки */
+/* ФОРМИ */
 .form-group { display: flex; gap: 20px; margin-bottom: 15px; }
 .form-group label { flex: 1; }
 label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
 input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
 textarea { resize: vertical; height: 80px; }
 
+/* КНОПКИ */
 button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; padding: 12px 25px; transition: background 0.3s; }
 .save-btn { background-color: #3498db; color: white; width: 100%; margin-top: 10px; }
 .download-btn { background-color: #27ae60; color: white; margin-top: 20px; width: 100%; }
 .nav-btn { background-color: #95a5a6; color: white; margin-bottom: 20px; margin-right: 10px; }
 
-/* === ЕЛЕМЕНТИ ЗВІТІВ === */
+/* ЕЛЕМЕНТИ ЗВІТІВ */
 .pdf-template { border: 1px solid #e0e0e0; padding: 40px; background: #fff; margin-top: 30px; border-radius: 5px; }
 .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .pdf-table td { padding: 8px 5px; border-bottom: 1px solid #eee; vertical-align: top; width: 50%; }
 .footer { margin-top: 40px; font-size: 0.8em; color: #888; text-align: right; border-top: 2px solid #eee; padding-top: 10px; }
 
-/* Блоки статистики */
 .stats-container { display: flex; gap: 20px; margin-top: 20px; }
 .stat-card { flex: 1; padding: 20px; border-radius: 8px; text-align: center; }
 .bg-green { background-color: #eafaf1; border: 1px solid #d5f5e3; }
 .bg-orange { background-color: #fdf2e9; border: 1px solid #fae5d3; }
 
-/* Контейнер графіка */
+/* КОНТЕЙНЕР ГРАФІКА */
 .chart-container { 
     position: relative; 
     height: 400px; 
     width: 100%; 
     margin-top: 30px; 
+    /* Центрування вмісту */
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* === РЕЗУЛЬТАТИ КАЛЬКУЛЯТОРА === */
-.calc-result-box {
-    margin-top: 20px; padding: 20px; border-radius: 8px; 
-    text-align: center; border: 2px solid #ddd; background-color: #f9f9f9;
-}
+/* РЕЗУЛЬТАТИ КАЛЬКУЛЯТОРА */
+.calc-result-box { margin-top: 20px; padding: 20px; border-radius: 8px; text-align: center; border: 2px solid #ddd; background-color: #f9f9f9; }
 .result-good { border-color: #27ae60; background: #eafaf1; color: #218c53; }
 .result-warn { border-color: #f39c12; background: #fef9e7; color: #d35400; }
 .result-bad { border-color: #c0392b; background: #fdedec; color: #c0392b; }
@@ -67,26 +53,18 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 
 /* === НАЛАШТУВАННЯ ДРУКУ === */
 @media print {
-    @page {
-        size: A4;
-        margin: 10mm;
-    }
-
-    body {
-        background-color: white;
-        padding: 0;
-        margin: 0;
-        visibility: visible;
-        /* Ця команда змушує браузер друкувати фонові кольори! */
-        -webkit-print-color-adjust: exact; 
-        print-color-adjust: exact;
+    @page { size: A4; margin: 10mm; }
+    
+    body { 
+        background-color: white; padding: 0; margin: 0; 
+        -webkit-print-color-adjust: exact; print-color-adjust: exact; 
     }
 
     /* Ховаємо зайве */
     .container > *:not(.printable-area) { display: none !important; }
     .nav-btn, .save-btn, .download-btn, form, h1 { display: none !important; }
 
-    /* Показуємо звіт */
+    /* Показуємо область друку */
     .printable-area {
         display: block !important;
         visibility: visible !important;
@@ -100,18 +78,28 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 
     .only-pdf { display: block !important; }
 
-    /* === ВИПРАВЛЕННЯ ГРАФІКА === */
-    /* Ховаємо canvas (бо він може не надрукуватись) */
-    #regressionChart { display: none !important; }
+    /* === ВИПРАВЛЕННЯ ТЕКСТУ === */
+    /* Примусово робимо текст результату чорним/темним, щоб не зникав */
+    #pred-weight, #diff-percent, #diff-text {
+        color: #000 !important;
+        text-shadow: none !important;
+    }
     
-    /* Показуємо картинку (img), яку ми створили з графіка */
-    #chart-img-print {
-        display: block !important;
-        max-width: 100%;
-        height: auto;
-        margin: 0 auto;
+    .calc-result-box h1 {
+        color: #000 !important; 
     }
 
-    /* Запобігаємо розривам сторінок */
+    /* === ВИПРАВЛЕННЯ ГРАФІКА (ПІДМІНА) === */
+    /* Ховаємо живий canvas */
+    canvas { display: none !important; }
+    
+    /* Показуємо картинку-зліпок */
+    #chart-img-print {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: 400px;
+    }
+
     .calc-result-box, .chart-container { break-inside: avoid; }
 }
