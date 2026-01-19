@@ -2,7 +2,7 @@
 
 /* ЗАГАЛЬНІ */
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
-.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; z-index: 1; }
 h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
 hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 
@@ -12,15 +12,28 @@ hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
 input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
 
+/* ВИПРАВЛЕНО: Поле коментаря тепер більше */
+textarea { 
+    width: 100%; 
+    padding: 10px; 
+    margin-top: 5px; 
+    border: 1px solid #ddd; 
+    border-radius: 5px; 
+    box-sizing: border-box; 
+    font-size: 16px; 
+    min-height: 120px; /* Більша висота */
+    resize: vertical; 
+}
+
 /* КНОПКИ */
 button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; padding: 12px 25px; transition: background 0.3s; }
 .save-btn { background-color: #3498db; color: white; width: 100%; margin-top: 10px; }
 .nav-btn { background-color: #95a5a6; color: white; margin-bottom: 20px; margin-right: 10px; }
-/* Кнопка "Назад" для звіту */
 .back-btn { background-color: #7f8c8d; color: white; margin-bottom: 20px; display: inline-block; }
+.download-btn { background-color: #27ae60; color: white; margin-top: 20px; width: 100%; }
 
 /* === ЕЛЕМЕНТИ ЗВІТУ === */
-/* За замовчуванням звіт прихований повністю */
+/* Для калькулятора */
 #report-section { display: none; }
 
 .pdf-template { border: 1px solid #e0e0e0; padding: 40px; background: #fff; margin-top: 20px; border-radius: 5px; }
@@ -28,33 +41,18 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
 .pdf-table td { padding: 8px 5px; border-bottom: 1px solid #eee; vertical-align: top; width: 50%; }
 .footer { margin-top: 40px; font-size: 0.8em; color: #888; text-align: right; border-top: 2px solid #eee; padding-top: 10px; }
 
-/* РЕЗУЛЬТАТИ */
-.calc-result-box { 
-    margin-top: 20px; 
-    padding: 30px; 
-    border-radius: 8px; 
-    text-align: center; 
-    border: 2px solid #ddd; 
-    background-color: #f9f9f9;
-}
+/* СТАТИСТИКА (report.html) */
+.stats-container { display: flex; gap: 20px; margin-top: 20px; }
+.stat-card { flex: 1; padding: 20px; border-radius: 8px; text-align: center; }
+.bg-green { background-color: #eafaf1; border: 1px solid #d5f5e3; }
+.bg-orange { background-color: #fdf2e9; border: 1px solid #fae5d3; }
 
-/* Явно задаємо колір тексту для ваги */
-.weight-value {
-    margin: 0;
-    font-size: 3.5em;
-    font-weight: bold;
-    color: #2c3e50; /* Темно-синій, майже чорний */
-    line-height: 1.2;
-}
-
-.result-good { border-color: #27ae60; background: #eafaf1; }
-.result-good .weight-value { color: #218c53; }
-
-.result-warn { border-color: #f39c12; background: #fef9e7; }
-.result-warn .weight-value { color: #d35400; }
-
-.result-bad { border-color: #c0392b; background: #fdedec; }
-.result-bad .weight-value { color: #c0392b; }
+/* РЕЗУЛЬТАТИ КАЛЬКУЛЯТОРА */
+.calc-result-box { margin-top: 20px; padding: 30px; border-radius: 8px; text-align: center; border: 2px solid #ddd; background-color: #f9f9f9; }
+.weight-value { margin: 0; font-size: 3.5em; font-weight: bold; color: #2c3e50; line-height: 1.2; }
+.result-good { border-color: #27ae60; background: #eafaf1; } .result-good .weight-value { color: #218c53; }
+.result-warn { border-color: #f39c12; background: #fef9e7; } .result-warn .weight-value { color: #d35400; }
+.result-bad { border-color: #c0392b; background: #fdedec; } .result-bad .weight-value { color: #c0392b; }
 
 /* ГРАФІК */
 .chart-container { 
@@ -65,13 +63,14 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
     display: flex; justify-content: center; align-items: center; 
 }
 
-#chart-img-print {
-    display: none; /* Спочатку ховаємо картинку */
+/* Зображення для друку (для заміни canvas) */
+.chart-img-print {
+    display: none; 
     max-width: 100%;
     height: auto;
 }
 
-/* === ДРУК === */
+/* === НАЛАШТУВАННЯ ДРУКУ === */
 @media print {
     @page { size: A4; margin: 10mm; }
     
@@ -80,21 +79,31 @@ button { cursor: pointer; font-size: 16px; border: none; border-radius: 5px; pad
         -webkit-print-color-adjust: exact; print-color-adjust: exact; 
     }
 
-    /* Ховаємо навігацію сайту */
-    .container > *:not(#report-section) { display: none !important; }
-    .nav-btn, .back-btn { display: none !important; }
-
-    /* Переконуємось, що звіт видимий */
-    #report-section { display: block !important; }
+    /* Ховаємо ВСІ кнопки та елементи навігації */
+    button, .nav-btn, .save-btn, .download-btn, .back-btn, form, h1 { display: none !important; }
     
-    /* Прибираємо рамки контейнера для чистого аркуша */
-    .container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+    /* Ховаємо контейнер, якщо це не звіт */
+    .container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; border: none; }
+    
+    /* Універсальне правило: ховаємо все, крім області друку */
+    body > * { display: none; }
+    body > .container { display: block; }
+    .container > * { display: none; }
+    
+    /* Показуємо конкретні блоки звітів */
+    #report-section, #report-container, .printable-area { 
+        display: block !important; 
+    }
+    
     .pdf-template { border: none; padding: 0; margin: 0; }
 
-    /* Підміна графіка */
+    /* ПІДМІНА ГРАФІКА */
     canvas { display: none !important; }
-    #chart-img-print { display: block !important; }
+    .chart-img-print { display: block !important; }
+
+    /* КОЛЬОРИ */
+    .weight-value, p, span, td, strong { color: #000 !important; }
+    .bg-green, .bg-orange { border: 1px solid #ccc !important; } /* Контур для ч/б друку */
     
-    /* ГАРАНТІЯ КОЛЬОРУ */
-    .weight-value, p, span, td { color: #000 !important; }
+    .calc-result-box, .chart-container, .stat-card { break-inside: avoid; }
 }
