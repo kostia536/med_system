@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналіз ваги (Регресійна модель)</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js"></script>
+</head>
+<body>
+    <main class="container">
+        <button onclick="location.href='index.html'" class="nav-btn">⬅ На головну</button>
+        
+        <h1>Калькулятор "Статистична Норма"</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            Порівняння з базою даних (Linear Regression Model)
+        </p>
+
+        <form id="calc-form">
+            <div class="form-group">
+                <label>Ваша стать:
+                    <select name="gender" required>
+                        <option value="Чоловіча">Чоловік</option>
+                        <option value="Жіноча">Жінка</option>
+                    </select>
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Ваш зріст (см): <input type="number" name="height" required min="100" max="250" value="175" /></label>
+                <label>Ваша вага (кг): <input type="number" name="weight" required min="30" max="200" value="75" /></label>
+            </div>
+            <button type="submit" class="save-btn">🔍 Аналізувати та Створити PDF</button>
+        </form>
+
+        <div id="pdf-report" class="pdf-template printable-area only-pdf">
+            <h2 style="text-align: center; color: #2c3e50;">Індивідуальний Аналітичний Звіт</h2>
+            <hr style="border: 1px solid #2c3e50;">
+
+            <div style="margin-top: 20px;">
+                <h3>1. Вхідні дані</h3>
+                <table class="pdf-table">
+                    <tr>
+                        <td><strong>Пацієнт:</strong> Анонімний</td>
+                        <td><strong>Дата аналізу:</strong> <span id="report-date"></span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Стать:</strong> <span id="res-gender"></span></td>
+                        <td><strong>Зріст:</strong> <span id="res-height"></span> см</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Фактична вага:</strong> <span id="res-weight"></span> кг</td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>2. Результат моделювання</h3>
+                <p>
+                    На основі лінійної регресії бази даних (<span id="db-count"></span> записів), 
+                    прогнозована "статистична норма" для вашого зросту складає:
+                </p>
+                
+                <div class="calc-result-box" id="result-box">
+                    <h1 style="margin: 0; font-size: 3em;" id="pred-weight"></h1>
+                    <p style="margin: 10px 0 0 0; font-size: 1.2em;">
+                        Відхилення: <strong id="diff-percent"></strong>
+                    </p>
+                    <p id="diff-text" style="font-size: 0.9em;"></p>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; page-break-inside: avoid;">
+                <h3>3. Візуалізація (Scatter Plot + Trend Line)</h3>
+                <p style="font-size: 0.8em; color: #666;">
+                    Сині точки - база даних. Червона лінія - тренд. <br>
+                    <strong style="color: #e74c3c; font-size: 1.2em;">● Велике коло</strong> - це ви.
+                </p>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="regressionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Метод: Лінійна регресія (Least Squares). Не є медичним діагнозом.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const form = document.getElementById('calc-form');
+        let myChart = null;
+
+        // --- МАТЕМАТИКА: ЛІНІЙНА РЕГРЕСІЯ ---
+        function calculateLinearRegression(x, y) {
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += (x[i] * y[i]);
+                sumXX += (x[i] * x[i]);
+            }
+
+            // Формули методу найменших квадратів
+            // y = mx + b
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            return { m: slope, b: intercept };
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const gender = form.elements.gender.value;
+            const userH = Number(form.elements.height.value);
+            const userW = Number(form.elements.weight.value);
+
+            // 1. Отримуємо дані з бази і фільтруємо по статі
+            const db = getDatabase();
+            const filteredData = db.filter(p => p.gender === gender && p.height > 0 && p.weight > 0);
+
+            if (filteredData.length < 10) {
+                alert("Недостатньо даних у базі для цієї статі!");
+                return;
+            }
+
+            // 2. Готуємо масиви X (зріст) та Y (вага)
+            const xValues = filteredData.map(p => p.height);
+            const yValues = filteredData.map(p => p.weight);
+
+            // 3. Рахуємо регресію
+            const { m, b } = calculateLinearRegression(xValues, yValues);
+
+            // 4. Прогнозуємо вагу для користувача
+            const predictedW = (m * userH) + b;
+            
+            // 5. Рахуємо відхилення
+            const diffKg = userW - predictedW;
+            const diffPercent = (diffKg / predictedW) * 100;
+
+            // --- ЗАПОВНЕННЯ ЗВІТУ ---
+            document.getElementById('res-gender').innerText = gender;
+            document.getElementById('res-height').innerText = userH;
+            document.getElementById('res-weight').innerText = userW;
+            document.getElementById('db-count').innerText = filteredData.length;
+            document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
+
+            const predEl = document.getElementById('pred-weight');
+            const diffEl = document.getElementById('diff-percent');
+            const textEl = document.getElementById('diff-text');
+            const boxEl = document.getElementById('result-box');
+
+            predEl.innerText = `${predictedW.toFixed(1)} кг`;
+            
+            const sign = diffPercent > 0 ? "+" : "";
+            diffEl.innerText = `${sign}${diffPercent.toFixed(1)}%`;
+
+            // Стилізація результату
+            boxEl.className = 'calc-result-box'; // скидання
+            if (Math.abs(diffPercent) <= 10) {
+                boxEl.classList.add('result-good');
+                textEl.innerText = "Ваша вага в межах статистичної норми бази даних.";
+            } else if (Math.abs(diffPercent) <= 20) {
+                boxEl.classList.add('result-warn');
+                textEl.innerText = diffPercent > 0 ? "Вище статистичного середнього." : "Нижче статистичного середнього.";
+            } else {
+                boxEl.classList.add('result-bad');
+                textEl.innerText = "Значне відхилення від тренду бази даних.";
+            }
+
+            // 6. ПОБУДОВА ГРАФІКА
+            renderRegressionChart(xValues, yValues, m, b, userH, userW);
+
+            // 7. Відкриваємо друк
+            // Невелика затримка, щоб графік встиг намалюватися
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+
+        function renderRegressionChart(xData, yData, m, b, userH, userW) {
+            const ctx = document.getElementById('regressionChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            // Точки бази даних
+            const scatterData = xData.map((h, i) => ({ x: h, y: yData[i] }));
+
+            // Лінія регресії (беремо мінімальний і максимальний зріст для крайніх точок)
+            const minH = Math.min(...xData);
+            const maxH = Math.max(...xData);
+            const lineData = [
+                { x: minH, y: m * minH + b },
+                { x: maxH, y: m * maxH + b }
+            ];
+
+            myChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Пацієнти з бази',
+                            data: scatterData,
+                            backgroundColor: 'rgba(52, 152, 219, 0.3)', // Напівпрозорий синій
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Лінія тренду',
+                            data: lineData,
+                            type: 'line',
+                            borderColor: 'rgba(44, 62, 80, 0.8)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'ВИ (Користувач)',
+                            data: [{ x: userH, y: userW }],
+                            backgroundColor: '#e74c3c', // Червоний
+                            pointRadius: 8,
+                            pointHoverRadius: 10,
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Залежність Ваги від Зросту' }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear', 
+                            position: 'bottom', 
+                            title: { display: true, text: 'Зріст (см)' },
+                            min: 140, max: 210 // Фіксуємо межі для краси
+                        },
+                        y: { 
+                            title: { display: true, text: 'Вага (кг)' },
+                            min: 40, max: 150
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
