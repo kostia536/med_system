@@ -47,16 +47,22 @@
                 <h2 style="text-align: center; color: #2c3e50;">Медична картка пацієнта</h2>
                 <hr style="border: 1px solid #2c3e50;">
                 
-                <div class="card-grid">
-                    <p><strong>ПІБ:</strong> <span id="card-name"></span></p>
-                    <p><strong>Дата народження:</strong> <span id="card-birth"></span></p>
-                    <p><strong>Стать:</strong> <span id="card-gender"></span></p>
-                    <p><strong>Телефон:</strong> <span id="card-phone"></span></p>
-                    <p><strong>Фізичні дані:</strong> <span id="card-physique"></span></p>
-                    <p><strong>ІМТ:</strong> <span id="card-bmi"></span></p>
-                </div>
+                <table class="pdf-table">
+                    <tr>
+                        <td><strong>ПІБ:</strong><br><span id="card-name"></span></td>
+                        <td><strong>Дата народження:</strong><br><span id="card-birth"></span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Стать:</strong><br><span id="card-gender"></span></td>
+                        <td><strong>Телефон:</strong><br><span id="card-phone"></span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Фізичні дані:</strong><br><span id="card-physique"></span></td>
+                        <td><strong>ІМТ:</strong><br><span id="card-bmi"></span></td>
+                    </tr>
+                </table>
                 
-                <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-left: 4px solid #3498db;">
+                <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #ddd;">
                     <strong>Коментар лікаря:</strong><br>
                     <span id="card-note"></span>
                 </div>
@@ -81,48 +87,33 @@
             e.preventDefault();
             const formData = new FormData(form);
             
-            // Розрахунки
             const weight = Number(formData.get('weight'));
             const height = Number(formData.get('height'));
             const bmi = (weight / ((height/100) ** 2)).toFixed(1);
-            
-            // Отримання року народження для сумісності з CSV
             const birthDateVal = formData.get('birthDate');
             const birthYear = new Date(birthDateVal).getFullYear();
 
-            // Створення повного об'єкта (збігається зі структурою в data.js)
             currentPatient = {
-                id: Date.now(), // Унікальний ID на основі часу
+                id: Date.now(),
                 firstName: formData.get('firstName'),
                 lastName: formData.get('lastName'),
-                // Для відображення
                 name: `${formData.get('lastName')} ${formData.get('firstName')}`,
-                
                 birthDate: birthDateVal,
-                birthYear: birthYear, // Додаємо рік!
-                
+                birthYear: birthYear,
                 gender: formData.get('gender'),
                 phone: formData.get('phone') || '-',
-                
                 height: height,
                 weight: weight,
                 bmi: bmi,
-                
-                // Для картки (рядок)
                 physique: `${height} см / ${weight} кг`,
-                
                 note: formData.get('note') || 'Немає приміток',
                 source: 'web'
             };
 
-            // 1. Зберігаємо локально для цієї сторінки
             localStorage.setItem('lastPatient', JSON.stringify(currentPatient));
-
-            // 2. ДОДАЄМО В ГЛОБАЛЬНУ БАЗУ (виклик функції з data.js)
             addPatientToDB(currentPatient);
-            alert("Пацієнта успішно додано до загальної бази даних!");
+            alert("Пацієнта додано до бази!");
 
-            // Заповнення шаблону
             document.getElementById('card-name').innerText = currentPatient.name;
             document.getElementById('card-birth').innerText = currentPatient.birthDate;
             document.getElementById('card-gender').innerText = currentPatient.gender;
@@ -139,11 +130,11 @@
         downloadBtn.addEventListener('click', () => {
             const element = document.getElementById('medical-card');
             const opt = {
-                margin:       5, // Менші поля
-                filename:     `Картка_${currentPatient.name}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 5,
+                filename: `Картка_${currentPatient.name}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
         });
