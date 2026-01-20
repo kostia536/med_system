@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гендерний аналіз ризиків</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js"></script>
+</head>
+<body>
+    <main class="container">
+        
+        <div id="interface-section">
+            
+            <div class="dropdown">
+                <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+                <div id="myDropdown" class="dropdown-content">
+                    <a href="index.html">🏠 Головна (Реєстрація)</a>
+                    <a href="report.html">📊 Агреговані Звіти</a>
+                    <a href="calculator.html">🧮 AI Калькулятор</a>
+                    <a href="doctor.html">👨‍⚕️ Кабінет Лікаря</a>
+                    <a href="analysis.html">⚖️ Гендерний Аналіз</a>
+                </div>
+            </div>
+
+            <h1>Порівняльний Аналіз: Чоловіки vs Жінки</h1>
+
+            <div class="filter-panel" style="text-align: center;">
+                <p>Аналіз бази даних на схильність до проблем із вагою.</p>
+                <button onclick="runAnalysis()" class="save-btn" style="width: auto;">🔄 Запустити аналіз</button>
+            </div>
+
+            <div id="results-block" style="display: none;">
+                
+                <div class="calc-result-box" id="conclusion-box">
+                    <h2 style="margin-top: 0;">Висновки аналізу</h2>
+                    <p id="conclusion-text" style="font-size: 1.2em; line-height: 1.5;"></p>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="genderChart"></canvas>
+                </div>
+
+                <table class="data-table" style="margin-top: 30px;">
+                    <thead>
+                        <tr>
+                            <th>Категорія</th>
+                            <th>Чоловіки (%)</th>
+                            <th>Жінки (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body"></tbody>
+                </table>
+
+                <button onclick="printReport()" class="download-btn">🖨️ Друкувати PDF-звіт</button>
+            </div>
+        </div>
+
+        <div id="print-section" class="pdf-template printable-area" style="display: none;">
+            <h2 style="text-align: center; color: #2c3e50;">Звіт про гендерні ризики ожиріння</h2>
+            <hr>
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Дата аналізу:</strong> <span id="report-date"></span></p>
+                <p><strong>Вибірка:</strong> <span id="total-count"></span> пацієнтів</p>
+            </div>
+
+            <div class="calc-result-box" style="border-color: #3498db; background: #ebf5fb;">
+                <h3 style="margin-top: 0; color: #2980b9;">Аналітичний висновок</h3>
+                <p id="print-conclusion-text" style="font-size: 1.1em; font-weight: bold;"></p>
+            </div>
+
+            <h3 style="margin-top: 30px;">Візуалізація розподілу</h3>
+            <div class="chart-container">
+                <img id="chart-img-print" alt="Діаграма розподілу" style="width: 100%; max-height: 400px; object-fit: contain;">
+            </div>
+
+            <div class="footer">
+                <p>Метод: Порівняльний статистичний аналіз.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // === МЕНЮ ===
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) openDropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // === ЛОГІКА АНАЛІЗУ ===
+        let myChart = null;
+
+        // Плагін для білого фону графіка
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        function runAnalysis() {
+            const db = getDatabase();
+            const validData = db.filter(p => p.height > 0 && p.weight > 0);
+            
+            if (validData.length === 0) { alert("Немає даних!"); return; }
+
+            // 1. Сегментація та підрахунок
+            const stats = {
+                male: { total: 0, normal: 0, overweight: 0, obesity: 0 },
+                female: { total: 0, normal: 0, overweight: 0, obesity: 0 }
+            };
+
+            validData.forEach(p => {
+                const isMale = (p.gender === 'Чоловіча' || p.gender === 'M');
+                const group = isMale ? stats.male : stats.female;
+                
+                group.total++;
+                
+                if (p.bmi >= 18.5 && p.bmi < 25) group.normal++;
+                else if (p.bmi >= 25 && p.bmi < 30) group.overweight++;
+                else if (p.bmi >= 30) group.obesity++;
+            });
+
+            // 2. Розрахунок відсотків (захист від ділення на 0)
+            const calcPercent = (val, total) => total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+
+            const maleP = {
+                normal: calcPercent(stats.male.normal, stats.male.total),
+                overweight: calcPercent(stats.male.overweight, stats.male.total),
+                obesity: calcPercent(stats.male.obesity, stats.male.total)
+            };
+
+            const femaleP = {
+                normal: calcPercent(stats.female.normal, stats.female.total),
+                overweight: calcPercent(stats.female.overweight, stats.female.total),
+                obesity: calcPercent(stats.female.obesity, stats.female.total)
+            };
+
+            // 3. Формування висновку
+            const mObesity = parseFloat(maleP.obesity);
+            const fObesity = parseFloat(femaleP.obesity);
+            const diff = Math.abs(mObesity - fObesity).toFixed(1);
+            
+            let conclusion = "";
+            if (mObesity > fObesity) {
+                conclusion = `У досліджуваній вибірці <strong>чоловіки</strong> мають на <span style="color: #c0392b;">${diff}%</span> вищий ризик ожиріння, ніж жінки.`;
+            } else if (fObesity > mObesity) {
+                conclusion = `У досліджуваній вибірці <strong>жінки</strong> мають на <span style="color: #c0392b;">${diff}%</span> вищий ризик ожиріння, ніж чоловіки.`;
+            } else {
+                conclusion = "Ризик ожиріння у чоловіків та жінок однаковий.";
+            }
+
+            // Оновлення DOM
+            document.getElementById('conclusion-text').innerHTML = conclusion;
+            document.getElementById('print-conclusion-text').innerHTML = conclusion;
+            document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
+            document.getElementById('total-count').innerText = validData.length;
+
+            // Заповнення таблиці
+            const tbody = document.getElementById('stats-table-body');
+            tbody.innerHTML = `
+                <tr><td>Норма (18.5-25)</td><td>${maleP.normal}%</td><td>${femaleP.normal}%</td></tr>
+                <tr><td>Надмірна вага (25-30)</td><td>${maleP.overweight}%</td><td>${femaleP.overweight}%</td></tr>
+                <tr style="background: #fdedec; font-weight: bold;"><td>Ожиріння (≥30)</td><td style="color: #c0392b;">${maleP.obesity}%</td><td style="color: #c0392b;">${femaleP.obesity}%</td></tr>
+            `;
+
+            // 4. Побудова графіка
+            drawGenderChart(maleP, femaleP);
+            
+            document.getElementById('results-block').style.display = 'block';
+        }
+
+        function drawGenderChart(maleP, femaleP) {
+            const ctx = document.getElementById('genderChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Норма', 'Надмірна вага', 'Ожиріння'],
+                    datasets: [
+                        {
+                            label: 'Чоловіки',
+                            data: [maleP.normal, maleP.overweight, maleP.obesity],
+                            backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                            borderColor: '#2980b9',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Жінки',
+                            data: [femaleP.normal, femaleP.overweight, femaleP.obesity],
+                            backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                            borderColor: '#c0392b',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                plugins: [whiteBackgroundPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            title: { display: true, text: 'Відсоток групи (%)' }
+                        }
+                    },
+                    plugins: {
+                        title: { display: true, text: 'Порівняння категорій ваги за статтю' }
+                    }
+                }
+            });
+
+            // Підготовка картинки для друку
+            setTimeout(() => {
+                const imgData = myChart.toBase64Image();
+                document.getElementById('chart-img-print').src = imgData;
+            }, 800);
+        }
+
+        function printReport() {
+            const interfaceSection = document.getElementById('interface-section');
+            const printSection = document.getElementById('print-section');
+            
+            // Оновлення картинки перед друком
+            if (myChart) {
+                document.getElementById('chart-img-print').src = myChart.toBase64Image();
+            }
+
+            interfaceSection.style.display = 'none';
+            printSection.style.display = 'block';
+
+            setTimeout(() => {
+                window.print();
+                interfaceSection.style.display = 'block';
+                printSection.style.display = 'none';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
