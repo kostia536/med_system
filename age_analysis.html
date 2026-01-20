@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вікова аналітика ІМТ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js"></script>
+</head>
+<body>
+    <main class="container">
+        
+        <div id="interface-section">
+            
+            <div class="dropdown">
+                <button onclick="toggleMenu()" class="dropbtn">☰ Меню навігації ▼</button>
+                <div id="myDropdown" class="dropdown-content">
+                    <a href="index.html">Головна (Реєстрація)</a>
+                    <a href="report.html">Агреговані звіти</a>
+                    <a href="calculator.html">Калькулятор норми ваги</a>
+                    <a href="doctor.html">Кабінет лікаря</a>
+                    <a href="analysis.html">Гендерний аналіз</a>
+                </div>
+            </div>
+
+            <h1>Аналіз трендів: вік та ІМТ</h1>
+
+            <div class="filter-panel" style="text-align: center;">
+                <p>Дослідження кореляції між віком та індексом маси тіла.</p>
+                <button onclick="runAgeAnalysis()" class="save-btn" style="width: auto; background-color: #8e44ad;">📉 Побудувати тренд</button>
+            </div>
+
+            <div id="results-block" style="display: none;">
+                
+                <div class="calc-result-box" id="conclusion-box" style="border-color: #8e44ad; background-color: #f4ecf7;">
+                    <h2 style="margin-top: 0; color: #6c3483;">Група підвищеного ризику</h2>
+                    <p id="conclusion-text" style="font-size: 1.2em; line-height: 1.5;"></p>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="ageChart"></canvas>
+                </div>
+
+                <table class="data-table" style="margin-top: 30px;">
+                    <thead>
+                        <tr>
+                            <th>Вікова когорта</th>
+                            <th>Кількість пацієнтів</th>
+                            <th>Середній ІМТ</th>
+                            <th>Статус групи</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body"></tbody>
+                </table>
+
+                <button onclick="printReport()" class="download-btn">🖨️ Друкувати PDF-звіт</button>
+            </div>
+        </div>
+
+        <div id="print-section" class="pdf-template printable-area" style="display: none;">
+            <h2 style="text-align: center; color: #2c3e50;">Звіт: Вікова динаміка ІМТ</h2>
+            <hr>
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Дата аналізу:</strong> <span id="report-date"></span></p>
+                <p><strong>Всього оброблено:</strong> <span id="total-count"></span> пацієнтів</p>
+            </div>
+
+            <div class="calc-result-box" style="border-color: #8e44ad; background: #f4ecf7;">
+                <h3 style="margin-top: 0; color: #6c3483;">Аналітичний висновок</h3>
+                <p id="print-conclusion-text" style="font-size: 1.1em; font-weight: bold;"></p>
+            </div>
+
+            <h3 style="margin-top: 30px;">Графік тренду</h3>
+            <div class="chart-container">
+                <img id="chart-img-print" alt="Графік вікового тренду" style="width: 100%; max-height: 400px; object-fit: contain;">
+            </div>
+
+            <div class="footer">
+                <p>Метод: Когортний аналіз середніх величин.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // === МЕНЮ ===
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) openDropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // === ЛОГІКА АНАЛІЗУ ===
+        let myChart = null;
+        const whiteBackgroundPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        function runAgeAnalysis() {
+            const db = getDatabase();
+            const currentYear = new Date().getFullYear();
+            
+            // 1. Ініціалізація груп
+            const cohorts = {
+                '18-35': { label: 'Молодь (18-35)', sumBMI: 0, count: 0 },
+                '36-50': { label: 'Середній вік (36-50)', sumBMI: 0, count: 0 },
+                '51-65': { label: 'Зрілий вік (51-65)', sumBMI: 0, count: 0 },
+                '65+':   { label: 'Літні люди (65+)', sumBMI: 0, count: 0 }
+            };
+
+            let validCount = 0;
+
+            // 2. Обхід бази даних
+            db.forEach(p => {
+                if (p.height > 0 && p.weight > 0 && p.birthYear > 1900) {
+                    const age = currentYear - p.birthYear;
+                    const bmi = p.weight / ((p.height/100)**2);
+                    
+                    let groupKey = '';
+                    if (age >= 18 && age <= 35) groupKey = '18-35';
+                    else if (age >= 36 && age <= 50) groupKey = '36-50';
+                    else if (age >= 51 && age <= 65) groupKey = '51-65';
+                    else if (age > 65) groupKey = '65+';
+
+                    if (groupKey) {
+                        cohorts[groupKey].sumBMI += bmi;
+                        cohorts[groupKey].count++;
+                        validCount++;
+                    }
+                }
+            });
+
+            if (validCount === 0) { alert("Немає даних для аналізу!"); return; }
+
+            // 3. Розрахунок середніх та пошук максимуму
+            const labels = [];
+            const dataPoints = [];
+            let maxBMI = 0;
+            let riskGroup = '';
+
+            const tbody = document.getElementById('stats-table-body');
+            tbody.innerHTML = '';
+
+            for (const key in cohorts) {
+                const group = cohorts[key];
+                const avgBMI = group.count > 0 ? (group.sumBMI / group.count).toFixed(2) : 0;
+                
+                labels.push(key);
+                dataPoints.push(avgBMI);
+
+                // Пошук групи ризику
+                if (parseFloat(avgBMI) > maxBMI) {
+                    maxBMI = parseFloat(avgBMI);
+                    riskGroup = group.label;
+                }
+
+                // Статус для таблиці
+                let status = 'Норма';
+                let color = 'green';
+                if (avgBMI >= 25 && avgBMI < 30) { status = 'Надмірна вага'; color = '#f39c12'; }
+                if (avgBMI >= 30) { status = 'Ожиріння'; color = '#c0392b'; }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${group.label}</td>
+                        <td>${group.count}</td>
+                        <td><strong>${avgBMI}</strong></td>
+                        <td style="color: ${color}; font-weight: bold;">${status}</td>
+                    </tr>
+                `;
+            }
+
+            // 4. Формування висновку
+            const conclusion = `На основі аналізу вибірки, найбільш вразливою є група <strong>"${riskGroup}"</strong> із середнім показником ІМТ <span style="color: #c0392b; font-size: 1.2em;">${maxBMI}</span>.`;
+            
+            document.getElementById('conclusion-text').innerHTML = conclusion;
+            document.getElementById('print-conclusion-text').innerHTML = conclusion;
+            document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
+            document.getElementById('total-count').innerText = validCount;
+
+            // 5. Побудова графіка
+            drawAgeChart(labels, dataPoints);
+            document.getElementById('results-block').style.display = 'block';
+        }
+
+        function drawAgeChart(labels, data) {
+            const ctx = document.getElementById('ageChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line', // Лінійний графік для тренду
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Середній ІМТ',
+                        data: data,
+                        borderColor: '#8e44ad', // Фіолетовий
+                        backgroundColor: 'rgba(142, 68, 173, 0.2)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#8e44ad',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0.3 // Плавність лінії
+                    }]
+                },
+                plugins: [whiteBackgroundPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: false,
+                            min: 15,
+                            title: { display: true, text: 'Індекс маси тіла (ІМТ)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Вікові групи' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Динаміка зміни ІМТ з віком' }
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                const imgData = myChart.toBase64Image();
+                document.getElementById('chart-img-print').src = imgData;
+            }, 800);
+        }
+
+        function printReport() {
+            const interfaceSection = document.getElementById('interface-section');
+            const printSection = document.getElementById('print-section');
+            
+            if (myChart) {
+                document.getElementById('chart-img-print').src = myChart.toBase64Image();
+            }
+
+            interfaceSection.style.display = 'none';
+            printSection.style.display = 'block';
+
+            setTimeout(() => {
+                window.print();
+                interfaceSection.style.display = 'block';
+                printSection.style.display = 'none';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
