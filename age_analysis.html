@@ -24,7 +24,7 @@
                 </div>
             </div>
 
-            <h1>Аналіз трендів: вік та ІМТ</h1>
+            <h1>Аналіз трендів: Вік та ІМТ</h1>
 
             <div class="filter-panel" style="text-align: center;">
                 <p>Дослідження кореляції між віком та індексом маси тіла.</p>
@@ -77,6 +77,19 @@
                 <img id="chart-img-print" alt="Графік вікового тренду" style="width: 100%; max-height: 400px; object-fit: contain;">
             </div>
 
+            <h3 style="margin-top: 20px;">Детальна статистика</h3>
+            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #000; padding: 5px;">Вікова когорта</th>
+                        <th style="border: 1px solid #000; padding: 5px;">Кількість</th>
+                        <th style="border: 1px solid #000; padding: 5px;">Середній ІМТ</th>
+                        <th style="border: 1px solid #000; padding: 5px;">Статус</th>
+                    </tr>
+                </thead>
+                <tbody id="print-stats-table-body"></tbody>
+            </table>
+
             <div class="footer">
                 <p>Метод: Когортний аналіз середніх величин.</p>
             </div>
@@ -84,7 +97,6 @@
     </main>
 
     <script>
-        // === МЕНЮ ===
         function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
         window.onclick = function(event) {
             if (!event.target.matches('.dropbtn')) {
@@ -96,7 +108,6 @@
             }
         }
 
-        // === ЛОГІКА АНАЛІЗУ ===
         let myChart = null;
         const whiteBackgroundPlugin = {
             id: 'customCanvasBackgroundColor',
@@ -114,7 +125,6 @@
             const db = getDatabase();
             const currentYear = new Date().getFullYear();
             
-            // 1. Ініціалізація груп
             const cohorts = {
                 '18-35': { label: 'Молодь (18-35)', sumBMI: 0, count: 0 },
                 '36-50': { label: 'Середній вік (36-50)', sumBMI: 0, count: 0 },
@@ -124,7 +134,6 @@
 
             let validCount = 0;
 
-            // 2. Обхід бази даних
             db.forEach(p => {
                 if (p.height > 0 && p.weight > 0 && p.birthYear > 1900) {
                     const age = currentYear - p.birthYear;
@@ -146,14 +155,16 @@
 
             if (validCount === 0) { alert("Немає даних для аналізу!"); return; }
 
-            // 3. Розрахунок середніх та пошук максимуму
             const labels = [];
             const dataPoints = [];
             let maxBMI = 0;
             let riskGroup = '';
 
+            // Очищаємо обидві таблиці (екранну і друковану)
             const tbody = document.getElementById('stats-table-body');
+            const printTbody = document.getElementById('print-stats-table-body');
             tbody.innerHTML = '';
+            printTbody.innerHTML = '';
 
             for (const key in cohorts) {
                 const group = cohorts[key];
@@ -162,29 +173,31 @@
                 labels.push(key);
                 dataPoints.push(avgBMI);
 
-                // Пошук групи ризику
                 if (parseFloat(avgBMI) > maxBMI) {
                     maxBMI = parseFloat(avgBMI);
                     riskGroup = group.label;
                 }
 
-                // Статус для таблиці
                 let status = 'Норма';
                 let color = 'green';
                 if (avgBMI >= 25 && avgBMI < 30) { status = 'Надмірна вага'; color = '#f39c12'; }
                 if (avgBMI >= 30) { status = 'Ожиріння'; color = '#c0392b'; }
 
-                tbody.innerHTML += `
+                // HTML рядка
+                const rowHTML = `
                     <tr>
-                        <td>${group.label}</td>
-                        <td>${group.count}</td>
-                        <td><strong>${avgBMI}</strong></td>
-                        <td style="color: ${color}; font-weight: bold;">${status}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${group.label}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;">${group.count}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px;"><strong>${avgBMI}</strong></td>
+                        <td style="border: 1px solid #ddd; padding: 5px; color: ${color}; font-weight: bold;">${status}</td>
                     </tr>
                 `;
+
+                // Додаємо в обидві таблиці
+                tbody.innerHTML += rowHTML;
+                printTbody.innerHTML += rowHTML;
             }
 
-            // 4. Формування висновку
             const conclusion = `На основі аналізу вибірки, найбільш вразливою є група <strong>"${riskGroup}"</strong> із середнім показником ІМТ <span style="color: #c0392b; font-size: 1.2em;">${maxBMI}</span>.`;
             
             document.getElementById('conclusion-text').innerHTML = conclusion;
@@ -192,7 +205,6 @@
             document.getElementById('report-date').innerText = new Date().toLocaleString('uk-UA');
             document.getElementById('total-count').innerText = validCount;
 
-            // 5. Побудова графіка
             drawAgeChart(labels, dataPoints);
             document.getElementById('results-block').style.display = 'block';
         }
@@ -202,21 +214,20 @@
             if (myChart) myChart.destroy();
 
             myChart = new Chart(ctx, {
-                type: 'line', // Лінійний графік для тренду
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Середній ІМТ',
                         data: data,
-                        borderColor: '#8e44ad', // Фіолетовий
+                        borderColor: '#8e44ad',
                         backgroundColor: 'rgba(142, 68, 173, 0.2)',
                         borderWidth: 3,
                         pointBackgroundColor: '#fff',
                         pointBorderColor: '#8e44ad',
                         pointRadius: 6,
-                        pointHoverRadius: 8,
                         fill: true,
-                        tension: 0.3 // Плавність лінії
+                        tension: 0.3
                     }]
                 },
                 plugins: [whiteBackgroundPlugin],
@@ -224,19 +235,10 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { 
-                            beginAtZero: false,
-                            min: 15,
-                            title: { display: true, text: 'Індекс маси тіла (ІМТ)' }
-                        },
-                        x: {
-                            title: { display: true, text: 'Вікові групи' }
-                        }
+                        y: { beginAtZero: false, min: 15, title: { display: true, text: 'Індекс маси тіла (ІМТ)' } },
+                        x: { title: { display: true, text: 'Вікові групи' } }
                     },
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'Динаміка зміни ІМТ з віком' }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
 
